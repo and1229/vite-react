@@ -7,41 +7,43 @@ export function Header({
   showInstall, 
   handleInstallClick, 
   user, 
-  setShowSettings 
+  setShowSettings,
+  showSettings
 }) {
   return (
-    <header className="w-full p-4 flex justify-between items-center">
-      <div className="flex items-center">
-        <h1 className={`text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent ${darkMode ? '' : 'drop-shadow-sm'}`}>
+    <header className="w-full p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+      <div className="flex items-center w-full sm:w-auto">
+        <h1 className={`text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent ${darkMode ? '' : 'drop-shadow-sm'}`}>
           ShiftMate
         </h1>
         {showInstall && (
           <button
             onClick={handleInstallClick}
-            className={`ml-2 px-2 py-1 rounded text-xs font-semibold bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow border border-purple-600 hover:from-blue-500 hover:to-purple-500 transition-all focus:outline-none focus:ring-2 focus:ring-purple-400 ${darkMode ? '' : 'shadow-md'}`}
+            className={`ml-2 sm:ml-3 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg border border-purple-600 hover:from-blue-500 hover:to-purple-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 ${darkMode ? 'focus:ring-offset-gray-900' : 'focus:ring-offset-white'}`}
             style={{ 
-              minWidth: 0, 
-              minHeight: 0, 
-              letterSpacing: '0.01em', 
-              boxShadow: darkMode ? '0 1px 3px 0 rgba(80, 70, 200, 0.10)' : '0 2px 8px 0 rgba(80, 70, 200, 0.08)' 
+              minWidth: 'fit-content',
+              letterSpacing: '0.02em', 
+              boxShadow: darkMode ? '0 4px 12px rgba(139, 92, 246, 0.3)' : '0 4px 12px rgba(139, 92, 246, 0.2)' 
             }}
             title="Установить ShiftMate на устройство"
           >
-            <svg className="inline w-3 h-3 mr-1 -mt-0.5 align-middle" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <svg className="inline w-3 h-3 sm:w-4 sm:h-4 mr-1 -mt-0.5 align-middle" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
             </svg>
             Установить
           </button>
         )}
       </div>
-      <div className="flex items-center space-x-4">
-        {user && <span className="text-sm">Привет, {user.displayName || 'Гость'}</span>}
-        <button onClick={() => setDarkMode(!darkMode)} className="focus:outline-none">
+      <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto justify-end">
+        <button 
+          onClick={() => setDarkMode(!darkMode)} 
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400"
+        >
           {darkMode ? <MoonIcon /> : <SunIcon />}
         </button>
         <button
-          onClick={() => setShowSettings(true)}
-          className="p-2 rounded-full"
+          onClick={() => setShowSettings(!showSettings)}
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400"
           title="Настройки"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

@@ -21,7 +21,7 @@ import { Schedule } from './components/Schedule';
 import { Analytics } from './components/Analytics';
 import { Goals } from './components/Goals';
 import { ShiftEditModal } from './components/ShiftEditModal';
-import { SettingsModal } from './components/SettingsModal';
+import { SettingsPanel } from './components/SettingsModal';
 import { AuthScreen } from './components/AuthScreen';
 
 // Импорт хуков
@@ -131,6 +131,12 @@ export default function App() {
   // Вход как гость
   const handleGuestSignIn = () => {
     setUser({ name: 'Гость', badge: 'guest', isGoogle: false });
+  };
+
+  // Выход из аккаунта
+  const handleSignOut = () => {
+    setUser(null);
+    setIsGoogleUser(false);
   };
 
   // Синхронизация с Firestore при изменении данных
@@ -361,6 +367,17 @@ export default function App() {
         handleInstallClick={handleInstallClick}
         user={user}
         setShowSettings={setShowSettings}
+        showSettings={showSettings}
+      />
+      
+      <SettingsPanel
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
+        showSettings={showSettings}
+        user={user}
+        onGoogleSignIn={handleGoogleSignInWithData}
+        onGoogleSignOut={handleSignOut}
+        onGuestSignIn={handleGuestSignIn}
       />
       
       <Navigation
@@ -369,7 +386,7 @@ export default function App() {
         darkMode={darkMode}
       />
       
-      <main className="container mx-auto p-4 max-w-4xl">
+      <main className="container mx-auto p-3 sm:p-4 max-w-4xl w-full">
         {activeTab === "calculator" && (
           <Calculator
             darkMode={darkMode}
@@ -429,18 +446,18 @@ export default function App() {
         )}
       </main>
 
-      <footer className={`mt-auto py-4 px-4 text-center text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400 bg-white/80 border-t border-gray-200'}`}>
+      <footer className={`mt-auto py-3 sm:py-4 px-3 sm:px-4 text-center text-xs sm:text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400 bg-white/80 border-t border-gray-200'}`}>
         ShiftMate © {new Date().getFullYear()} 
       </footer>
       
-      <div className="w-full flex justify-center pb-6">
+      <div className="w-full flex justify-center pb-4 sm:pb-6 px-3 sm:px-4">
         <a
           href="https://pxl.leads.su/click/e2a6684949541fd83e9e15e94a82fee9?erid=2W5zFJLdzVv"
           target="_blank"
           rel="noopener noreferrer"
-          className={`px-6 py-3 rounded-full bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 text-white font-bold text-base shadow-md hover:shadow-xl hover:brightness-110 transition-all duration-300 ${darkMode ? '' : 'shadow-lg'}`}
+          className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 text-white font-bold text-sm sm:text-base shadow-md hover:shadow-xl hover:brightness-110 transition-all duration-300 ${darkMode ? '' : 'shadow-lg'}`}
           style={{
-            minWidth: 180,
+            minWidth: 160,
             textAlign: 'center',
             letterSpacing: '0.05em',
             fontFamily: `'Segoe UI', sans-serif`,
@@ -460,14 +477,6 @@ export default function App() {
           onSavePicks={(value) => editShiftPicks(selectedShiftIndex, value)}
           onClose={() => setShowDetailsModal(false)}
           darkMode={darkMode}
-        />
-      )}
-
-      {showSettings && (
-        <SettingsModal
-          darkMode={darkMode}
-          setDarkMode={setDarkMode}
-          onClose={() => setShowSettings(false)}
         />
       )}
     </div>
