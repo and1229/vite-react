@@ -1,53 +1,100 @@
 import { useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
-import { signInWithRedirect, signOut, GoogleAuthProvider, getRedirectResult } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { vkSignIn, vkSignOut, checkVKAuth } from '../vkAuth';
 
-const provider = new GoogleAuthProvider();
-// Добавляем дополнительные области доступа
-provider.addScope('email');
-provider.addScope('profile');
-// Устанавливаем тип входа
-provider.setCustomParameters({
-  prompt: 'select_account'
-});
+// Функция для очистки объекта пользователя от циклических ссылок
+const cleanUserObject = (userData) => {
+  if (!userData) return null;
+  
+  return {
+    name: userData.name || '',
+    displayName: userData.displayName || userData.name || '',
+    badge: userData.badge || '',
+    email: userData.email || '',
+    photoURL: userData.photoURL || '',
+    uid: userData.uid || '',
+    isVK: userData.isVK || false,
+    vkId: userData.vkId || '',
+    vkDomain: userData.vkDomain || ''
+  };
+};
 
 export function useFirebase() {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('wb_user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [isGoogleUser, setIsGoogleUser] = useState(() => {
-    const saved = localStorage.getItem('wb_is_google_user');
+  const [isVKUser, setIsVKUser] = useState(() => {
+    const saved = localStorage.getItem('wb_is_vk_user');
     return saved ? JSON.parse(saved) : false;
   });
   const [loadingSync, setLoadingSync] = useState(false);
   const [syncError, setSyncError] = useState('');
 
-  // Проверяем результат редиректа при загрузке компонента
+  // Проверяем статус VK авторизации при загрузке компонента
   useEffect(() => {
-    const checkRedirectResult = async () => {
+    const checkVKAuthStatus = async () => {
       try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          const user = result.user;
-          const userData = {
-            name: user.displayName || user.email || 'Google User',
-            displayName: user.displayName,
-            badge: user.uid,
-            email: user.email,
-            photoURL: user.photoURL || '',
-            uid: user.uid,
-            isGoogle: true,
-          };
-          setUser(userData);
-          setIsGoogleUser(true);
-          localStorage.setItem('wb_user', JSON.stringify(userData));
-          localStorage.setItem('wb_is_google_user', 'true');
+        const vkUser = await checkVKAuth();
+        if (vkUser && vkUser.uid) {
+          const cleanUser = cleanUserObject(vkUser);
+          if (cleanUser) {
+            setUser(cleanUser);
+            setIsVKUser(true);
+            localStorage.setItem('wb_user', JSON.stringify(cleanUser));
+            localStorage.setItem('wb_is_vk_user', 'true');
+            
+            // Загрузка данных из Firestore
+            try {
+              const userDoc = await getDoc(doc(db, 'users', cleanUser.uid));
+              if (userDoc.exists()) {
+                const data = userDoc.data();
+                // Обновляем локальное состояние данными из Firestore
+                if (data.goals) localStorage.setItem('wb_goals', JSON.stringify(data.goals));
+                if (data.analyticsShifts) localStorage.setItem('wb_shifts', JSON.stringify(data.analyticsShifts));
+                if (data.calendarData) localStorage.setItem('calendarData', JSON.stringify(data.calendarData));
+                if (data.workDays) localStorage.setItem('wb_work_days', JSON.stringify(data.workDays));
+              } else {
+                // Если данных нет, создаём пустой документ
+                const defaultData = {
+                  goals: [],
+                  analyticsShifts: [],
+                  calendarData: {},
+                  workDays: [],
+                };
+                await setDoc(doc(db, 'users', cleanUser.uid), defaultData);
+              }
+            } catch (firestoreError) {
+              console.error('Firestore error:', firestoreError);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('VK auth check error:', error);
+      }
+    };
+
+    checkVKAuthStatus();
+  }, []);
+
+  const handleVKSignIn = async () => {
+    setSyncError('');
+    setLoadingSync(true);
+    try {
+      const vkUser = await vkSignIn();
+      if (vkUser && vkUser.uid) {
+        const cleanUser = cleanUserObject(vkUser);
+        if (cleanUser) {
+          setUser(cleanUser);
+          setIsVKUser(true);
+          localStorage.setItem('wb_user', JSON.stringify(cleanUser));
+          localStorage.setItem('wb_is_vk_user', 'true');
           
           // Загрузка данных из Firestore
           try {
-            const userDoc = await getDoc(doc(db, 'users', user.uid));
+            const userDoc = await getDoc(doc(db, 'users', cleanUser.uid));
             if (userDoc.exists()) {
               const data = userDoc.data();
               // Обновляем локальное состояние данными из Firestore
@@ -63,70 +110,49 @@ export function useFirebase() {
                 calendarData: {},
                 workDays: [],
               };
-              await setDoc(doc(db, 'users', user.uid), defaultData);
+              await setDoc(doc(db, 'users', cleanUser.uid), defaultData);
             }
           } catch (firestoreError) {
             console.error('Firestore error:', firestoreError);
           }
         }
-      } catch (error) {
-        console.error('Redirect result error:', error);
-        // Если произошла ошибка с редиректом, предлагаем войти как гость
-        if (error.code === 'auth/unauthorized-domain' || error.code === 'auth/redirect-uri-mismatch') {
-          setSyncError('Google авторизация временно недоступна. Используйте гостевой режим.');
-        } else {
-          setSyncError('Ошибка при завершении входа через Google');
-        }
       }
-    };
-
-    checkRedirectResult();
-  }, []);
-
-  const handleGoogleSignIn = async () => {
-    setSyncError('');
-    setLoadingSync(true);
-    try {
-      // Проверяем, доступен ли домен для авторизации
-      const currentDomain = window.location.origin;
-      console.log('Current domain:', currentDomain);
-      
-      // Используем редирект вместо попапа
-      await signInWithRedirect(auth, provider);
-      // После редиректа пользователь вернется на страницу и useEffect обработает результат
     } catch (e) {
-      console.error('Google sign-in error:', e);
-      let errorMessage = 'Ошибка входа через Google';
+      console.error('VK sign-in error:', e);
+      let errorMessage = 'Ошибка входа через ВКонтакте';
       
-      if (e.code === 'auth/unauthorized-domain') {
-        errorMessage = 'Домен не авторизован для входа через Google. Используйте гостевой режим.';
-      } else if (e.code === 'auth/redirect-uri-mismatch') {
-        errorMessage = 'Ошибка конфигурации авторизации. Используйте гостевой режим.';
-      } else if (e.code === 'auth/network-request-failed') {
-        errorMessage = 'Ошибка сети. Проверьте подключение к интернету';
-      } else if (e.code === 'auth/operation-not-allowed') {
-        errorMessage = 'Вход через Google не разрешен для этого приложения';
+      if (e.message.includes('не загрузился')) {
+        errorMessage = 'Ошибка загрузки VKID SDK. Проверьте подключение к интернету';
+      } else if (e.message.includes('отменена')) {
+        errorMessage = 'Авторизация была отменена';
+      } else if (e.message.includes('не удалось получить данные')) {
+        errorMessage = 'Не удалось получить данные пользователя';
+      } else if (e.message.includes('Ошибка авторизации VK')) {
+        errorMessage = 'Ошибка авторизации через ВКонтакте';
+      } else if (e.message.includes('Ошибка получения данных пользователя')) {
+        errorMessage = 'Ошибка получения данных пользователя';
       }
       
       setSyncError(errorMessage);
+    } finally {
       setLoadingSync(false);
     }
   };
 
-  const handleGoogleSignOut = async () => {
+  const handleVKSignOut = async () => {
     try {
-      await signOut(auth);
+      await vkSignOut();
       setUser(null);
-      setIsGoogleUser(false);
+      setIsVKUser(false);
       localStorage.removeItem('wb_user');
-      localStorage.removeItem('wb_is_google_user');
+      localStorage.removeItem('wb_is_vk_user');
     } catch (error) {
       console.error('Sign out error:', error);
     }
   };
 
   const syncDataToFirestore = async (data) => {
-    if (user && isGoogleUser && user.uid) {
+    if (user && isVKUser && user.uid && data) {
       setLoadingSync(true);
       try {
         await setDoc(doc(db, 'users', user.uid), data, { merge: true });
@@ -142,12 +168,12 @@ export function useFirebase() {
   return {
     user,
     setUser,
-    isGoogleUser,
-    setIsGoogleUser,
+    isVKUser,
+    setIsVKUser,
     loadingSync,
     syncError,
-    handleGoogleSignIn,
-    handleGoogleSignOut,
+    handleVKSignIn,
+    handleVKSignOut,
     syncDataToFirestore
   };
 } 

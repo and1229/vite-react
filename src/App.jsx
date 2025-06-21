@@ -12,6 +12,8 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
+import { getDoc, doc, setDoc } from 'firebase/firestore';
+import { db } from './firebase';
 
 // Импорт компонентов
 import { Header } from './components/Header';
@@ -75,12 +77,12 @@ export default function App() {
   const {
     user,
     setUser,
-    isGoogleUser,
-    setIsGoogleUser,
+    isVKUser,
+    setIsVKUser,
     loadingSync,
     syncError,
-    handleGoogleSignIn,
-    handleGoogleSignOut,
+    handleVKSignIn,
+    handleVKSignOut,
     syncDataToFirestore
   } = useFirebase();
 
@@ -117,26 +119,71 @@ export default function App() {
     else document.documentElement.classList.remove("dark");
   }, [darkMode]);
 
-  // Загрузка данных при входе через Google
-  const handleGoogleSignInWithData = async () => {
-    // Просто вызываем функцию входа - данные загрузятся автоматически через useEffect в useFirebase
-    await handleGoogleSignIn();
+  // Загрузка данных при входе через VK
+  const handleVKSignInWithData = async (vkUserData = null) => {
+    if (vkUserData && vkUserData.uid) {
+      // Очищаем объект пользователя от циклических ссылок
+      const cleanUser = {
+        name: vkUserData.name || '',
+        displayName: vkUserData.displayName || vkUserData.name || '',
+        badge: vkUserData.badge || '',
+        email: vkUserData.email || '',
+        photoURL: vkUserData.photoURL || '',
+        uid: vkUserData.uid || '',
+        isVK: vkUserData.isVK || false,
+        vkId: vkUserData.vkId || '',
+        vkDomain: vkUserData.vkDomain || ''
+      };
+
+      // Если данные пользователя переданы напрямую от VKID виджета
+      setUser(cleanUser);
+      setIsVKUser(true);
+      localStorage.setItem('wb_user', JSON.stringify(cleanUser));
+      localStorage.setItem('wb_is_vk_user', 'true');
+      
+      // Загрузка данных из Firestore
+      try {
+        const userDoc = await getDoc(doc(db, 'users', cleanUser.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          // Обновляем локальное состояние данными из Firestore
+          if (data.goals) localStorage.setItem('wb_goals', JSON.stringify(data.goals));
+          if (data.analyticsShifts) localStorage.setItem('wb_shifts', JSON.stringify(data.analyticsShifts));
+          if (data.calendarData) localStorage.setItem('calendarData', JSON.stringify(data.calendarData));
+          if (data.workDays) localStorage.setItem('wb_work_days', JSON.stringify(data.workDays));
+        } else {
+          // Если данных нет, создаём пустой документ
+          const defaultData = {
+            goals: [],
+            analyticsShifts: [],
+            calendarData: {},
+            workDays: [],
+          };
+          await setDoc(doc(db, 'users', cleanUser.uid), defaultData);
+        }
+      } catch (firestoreError) {
+        console.error('Firestore error:', firestoreError);
+      }
+    } else {
+      // Старый способ через хук (для совместимости)
+      await handleVKSignIn();
+    }
   };
 
   // Вход как гость
   const handleGuestSignIn = () => {
-    setUser({ name: 'Гость', badge: 'guest', isGoogle: false });
+    setUser({ name: 'Гость', badge: 'guest', isVK: false });
   };
 
   // Выход из аккаунта
   const handleSignOut = () => {
     setUser(null);
-    setIsGoogleUser(false);
+    setIsVKUser(false);
   };
 
   // Синхронизация с Firestore при изменении данных
   useEffect(() => {
-    if (user && isGoogleUser && user.uid) {
+    if (user && isVKUser && user.uid) {
       syncDataToFirestore({
         goals,
         analyticsShifts,
@@ -144,11 +191,11 @@ export default function App() {
         workDays,
       });
     }
-  }, [goals, analyticsShifts, calendarData, workDays, user, isGoogleUser]);
+  }, [goals, analyticsShifts, calendarData, workDays, user, isVKUser]);
 
-  // Обновление состояния после успешной авторизации через редирект
+  // Обновление состояния после успешной авторизации через VK
   useEffect(() => {
-    if (user && isGoogleUser) {
+    if (user && isVKUser) {
       // Обновляем состояние из localStorage, если данные были загружены из Firestore
       const storedGoals = localStorage.getItem('wb_goals');
       const storedShifts = localStorage.getItem('wb_shifts');
@@ -199,15 +246,28 @@ export default function App() {
         }
       }
     }
-  }, [user, isGoogleUser]);
+  }, [user, isVKUser]);
 
   // Обновление статистики пользователей
   useEffect(() => {
-    if (user) {
+    if (user && user.badge) {
+      // Очищаем объект пользователя от циклических ссылок
+      const cleanUser = {
+        name: user.name || '',
+        displayName: user.displayName || user.name || '',
+        badge: user.badge || '',
+        email: user.email || '',
+        photoURL: user.photoURL || '',
+        uid: user.uid || '',
+        isVK: user.isVK || false,
+        vkId: user.vkId || '',
+        vkDomain: user.vkDomain || ''
+      };
+
       let users = JSON.parse(localStorage.getItem('wb_users') || '[]');
-      const exists = users.some(u => u.badge === user.badge);
+      const exists = users.some(u => u.badge === cleanUser.badge);
       if (!exists) {
-        users.push(user);
+        users.push(cleanUser);
         localStorage.setItem('wb_users', JSON.stringify(users));
         setUsersCount(users.length);
       } else {
@@ -400,7 +460,7 @@ export default function App() {
   if (!user) {
     return (
       <AuthScreen
-        onGoogleSignIn={handleGoogleSignInWithData}
+        onVKSignIn={handleVKSignInWithData}
         onGuestSignIn={handleGuestSignIn}
         loadingSync={loadingSync}
         syncError={syncError}
@@ -425,8 +485,8 @@ export default function App() {
         setDarkMode={setDarkMode}
         showSettings={showSettings}
         user={user}
-        onGoogleSignIn={handleGoogleSignInWithData}
-        onGoogleSignOut={handleSignOut}
+        onVKSignIn={handleVKSignInWithData}
+        onVKSignOut={handleSignOut}
         onGuestSignIn={handleGuestSignIn}
       />
       

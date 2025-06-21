@@ -5,8 +5,8 @@ export function SettingsPanel({
   setDarkMode, 
   showSettings,
   user,
-  onGoogleSignIn,
-  onGoogleSignOut,
+  onVKSignIn,
+  onVKSignOut,
   onGuestSignIn
 }) {
   if (!showSettings) return null;
@@ -43,10 +43,10 @@ export function SettingsPanel({
               Профиль
             </h3>
             
-            {user && user.isGoogle ? (
+            {user && user.isVK ? (
               <div className="space-y-2">
                 <div className={`flex items-center space-x-2 p-2 rounded-lg ${darkMode ? 'bg-gray-700/30' : 'bg-gray-100'}`}>
-                  <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                  <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
                     <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                     </svg>
@@ -56,12 +56,12 @@ export function SettingsPanel({
                       {user.displayName || user.name}
                     </p>
                     <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      Google аккаунт
+                      ВКонтакте аккаунт
                     </p>
                   </div>
                 </div>
                 <button
-                  onClick={onGoogleSignOut}
+                  onClick={onVKSignOut}
                   className={`w-full px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
                     darkMode 
                       ? 'border-red-500 text-red-400 hover:bg-red-500/10' 
@@ -89,19 +89,19 @@ export function SettingsPanel({
                   </div>
                 </div>
                 <button
-                  onClick={onGoogleSignIn}
-                  className={`w-full px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 ${darkMode ? 'focus:ring-offset-gray-900' : 'focus:ring-offset-white'}`}
+                  onClick={onVKSignIn}
+                  className={`w-full px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${darkMode ? 'focus:ring-offset-gray-900' : 'focus:ring-offset-white'}`}
                 >
-                  Войти через Google
+                  Войти через ВКонтакте
                 </button>
               </div>
             ) : (
               <div className="space-y-2">
                 <button
-                  onClick={onGoogleSignIn}
-                  className={`w-full px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 ${darkMode ? 'focus:ring-offset-gray-900' : 'focus:ring-offset-white'}`}
+                  onClick={onVKSignIn}
+                  className={`w-full px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${darkMode ? 'focus:ring-offset-gray-900' : 'focus:ring-offset-white'}`}
                 >
-                  Войти через Google
+                  Войти через ВКонтакте
                 </button>
                 <button
                   onClick={onGuestSignIn}
