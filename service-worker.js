@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shiftmate-cache-v2';
+const CACHE_NAME = 'shiftmate-cache-v3';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -12,6 +12,7 @@ const urlsToCache = [
 
 // Установка service worker
 self.addEventListener('install', (event) => {
+  console.log('Service Worker installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -19,13 +20,18 @@ self.addEventListener('install', (event) => {
         return cache.addAll(urlsToCache);
       })
       .then(() => {
+        console.log('All resources cached successfully');
         return self.skipWaiting();
+      })
+      .catch((error) => {
+        console.error('Cache installation failed:', error);
       })
   );
 });
 
 // Активация service worker
 self.addEventListener('activate', (event) => {
+  console.log('Service Worker activating...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -37,6 +43,7 @@ self.addEventListener('activate', (event) => {
         })
       );
     }).then(() => {
+      console.log('Service Worker activated');
       return self.clients.claim();
     })
   );
@@ -44,6 +51,13 @@ self.addEventListener('activate', (event) => {
 
 // Перехват запросов
 self.addEventListener('fetch', (event) => {
+  // Пропускаем запросы к Firebase и другим внешним API
+  if (event.request.url.includes('firebase') || 
+      event.request.url.includes('googleapis') ||
+      event.request.url.includes('gstatic')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -72,7 +86,7 @@ self.addEventListener('fetch', (event) => {
           return response;
         }).catch(() => {
           // Если сеть недоступна, возвращаем fallback для HTML страниц
-          if (event.request.headers.get('accept').includes('text/html')) {
+          if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
             return caches.match('/');
           }
         });
@@ -119,4 +133,13 @@ self.addEventListener('notificationclick', (event) => {
       clients.openWindow('/')
     );
   }
+});
+
+// Обработка ошибок
+self.addEventListener('error', (event) => {
+  console.error('Service Worker error:', event.error);
+});
+
+self.addEventListener('unhandledrejection', (event) => {
+  console.error('Service Worker unhandled rejection:', event.reason);
 });

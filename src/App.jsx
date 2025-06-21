@@ -88,28 +88,72 @@ export default function App() {
 
   // PWA установка - улучшенная версия
   useEffect(() => {
+    let deferredPrompt = null;
+
     const handler = (e) => {
       e.preventDefault();
+      deferredPrompt = e;
       setDeferredPrompt(e);
       setShowInstall(true);
+      console.log('PWA install prompt captured');
     };
 
     // Проверяем, установлено ли уже приложение
     const checkIfInstalled = () => {
+      // Проверка для standalone режима
       if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('App is already installed in standalone mode');
         setShowInstall(false);
         return true;
       }
+      
+      // Проверка для iOS (проверяем наличие вкладки в браузере)
+      if (window.navigator.standalone === true) {
+        console.log('App is already installed on iOS');
+        setShowInstall(false);
+        return true;
+      }
+      
+      // Проверка для Android (проверяем наличие в списке приложений)
+      if ('getInstalledRelatedApps' in navigator) {
+        navigator.getInstalledRelatedApps().then((relatedApps) => {
+          if (relatedApps.length > 0) {
+            console.log('App is already installed on Android');
+            setShowInstall(false);
+            return true;
+          }
+        });
+      }
+      
       return false;
     };
 
     // Проверяем при загрузке
-    checkIfInstalled();
+    const isInstalled = checkIfInstalled();
+    
+    // Если не установлено, показываем кнопку через некоторое время
+    if (!isInstalled) {
+      const timer = setTimeout(() => {
+        // Проверяем еще раз через 2 секунды
+        if (!checkIfInstalled()) {
+          // Если приложение не установлено и нет deferredPrompt, 
+          // но есть поддержка PWA, показываем кнопку
+          if ('serviceWorker' in navigator && 'PushManager' in window) {
+            console.log('PWA supported, showing install button');
+            setShowInstall(true);
+          }
+        }
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
 
     window.addEventListener('beforeinstallprompt', handler);
     window.addEventListener('appinstalled', () => {
+      console.log('App was installed');
       setShowInstall(false);
       setDeferredPrompt(null);
+      deferredPrompt = null;
     });
 
     return () => {
@@ -130,6 +174,18 @@ export default function App() {
         setDeferredPrompt(null);
         setShowInstall(false);
       });
+    } else {
+      // Fallback для случаев, когда нет deferredPrompt
+      console.log('No deferred prompt available, trying manual install');
+      
+      // Показываем инструкции для ручной установки
+      if (navigator.userAgent.includes('Chrome')) {
+        alert('Для установки приложения:\n1. Нажмите на меню браузера (⋮)\n2. Выберите "Установить приложение"\n3. Подтвердите установку');
+      } else if (navigator.userAgent.includes('Safari')) {
+        alert('Для установки приложения:\n1. Нажмите на кнопку "Поделиться" (□↑)\n2. Выберите "На экран «Домой»"\n3. Подтвердите установку');
+      } else {
+        alert('Для установки приложения используйте меню браузера и выберите "Установить приложение" или "Добавить на главный экран"');
+      }
     }
   };
 

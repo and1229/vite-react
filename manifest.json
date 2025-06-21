@@ -11,6 +11,12 @@
   "lang": "ru",
   "prefer_related_applications": false,
   "categories": ["productivity", "business", "finance"],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
   "icons": [
     {
       "src": "/icon-192.png",
