@@ -44,7 +44,6 @@ module.exports = {
     client: {
       overlay: false,
       logging: 'warn',
-      webSocketURL: false,
     },
   },  plugins: [
     new HtmlWebpackPlugin({
