@@ -41,6 +41,11 @@ module.exports = {
     devMiddleware: {
       writeToDisk: true,
     },
+    client: {
+      overlay: false,
+      logging: 'warn',
+      webSocketURL: false,
+    },
   },  plugins: [
     new HtmlWebpackPlugin({
       template: './index.html',
