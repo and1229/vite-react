@@ -35,7 +35,8 @@ module.exports = {
       directory: path.join(__dirname, 'dist'),
     },
     port: 8080,
-    hot: true,
+    hot: false,
+    liveReload: false,
     historyApiFallback: true,
     devMiddleware: {
       writeToDisk: true,
