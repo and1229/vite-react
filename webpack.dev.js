@@ -50,6 +50,9 @@ module.exports = {
     },
     headers: {
       'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
     },
     compress: true,
     open: false,
@@ -59,12 +62,6 @@ module.exports = {
         usePolling: false,
         interval: 1000,
       },
-    },
-    setupMiddlewares: (middlewares, devServer) => {
-      if (!devServer) {
-        throw new Error('webpack-dev-server is not defined');
-      }
-      return middlewares;
     },
   },
   plugins: [
@@ -82,4 +79,4 @@ module.exports = {
       ],
     }),
   ],
-};
+}; 

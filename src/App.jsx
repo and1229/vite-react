@@ -12,8 +12,6 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
-import { getDoc, doc, setDoc } from 'firebase/firestore';
-import { db } from './firebase';
 
 // Импорт компонентов
 import { Header } from './components/Header';
@@ -29,6 +27,7 @@ import { AuthScreen } from './components/AuthScreen';
 // Импорт хуков
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useFirebase } from './hooks/useFirebase';
+import { useSwipe } from './hooks/useSwipe';
 
 // Регистрация Chart.js
 ChartJS.register(
@@ -51,6 +50,7 @@ export default function App() {
   const [calendarData, setCalendarData] = useLocalStorage('calendarData', {});
   const [workDays, setWorkDays] = useLocalStorage('wb_work_days', []);
   const [usersCount, setUsersCount] = useLocalStorage('wb_users_count', 0);
+  const [isGuestUser, setIsGuestUser] = useLocalStorage('wb_is_guest', false);
 
   // Состояния компонентов
   const [activeTab, setActiveTab] = useState("calculator");
@@ -77,16 +77,16 @@ export default function App() {
   const {
     user,
     setUser,
-    isVKUser,
-    setIsVKUser,
+    isGoogleUser,
+    setIsGoogleUser,
     loadingSync,
     syncError,
-    handleVKSignIn,
-    handleVKSignOut,
+    handleGoogleSignIn,
+    handleGoogleSignOut,
     syncDataToFirestore
   } = useFirebase();
 
-  // PWA установка
+  // PWA установка - улучшенная версия
   useEffect(() => {
     const handler = (e) => {
       e.preventDefault();
@@ -94,8 +94,28 @@ export default function App() {
       setShowInstall(true);
     };
 
+    // Проверяем, установлено ли уже приложение
+    const checkIfInstalled = () => {
+      if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+        setShowInstall(false);
+        return true;
+      }
+      return false;
+    };
+
+    // Проверяем при загрузке
+    checkIfInstalled();
+
     window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    window.addEventListener('appinstalled', () => {
+      setShowInstall(false);
+      setDeferredPrompt(null);
+    });
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('appinstalled', () => {});
+    };
   }, []);
 
   const handleInstallClick = () => {
@@ -119,71 +139,87 @@ export default function App() {
     else document.documentElement.classList.remove("dark");
   }, [darkMode]);
 
-  // Загрузка данных при входе через VK
-  const handleVKSignInWithData = async (vkUserData = null) => {
-    if (vkUserData && vkUserData.uid) {
-      // Очищаем объект пользователя от циклических ссылок
-      const cleanUser = {
-        name: vkUserData.name || '',
-        displayName: vkUserData.displayName || vkUserData.name || '',
-        badge: vkUserData.badge || '',
-        email: vkUserData.email || '',
-        photoURL: vkUserData.photoURL || '',
-        uid: vkUserData.uid || '',
-        isVK: vkUserData.isVK || false,
-        vkId: vkUserData.vkId || '',
-        vkDomain: vkUserData.vkDomain || ''
-      };
-
-      // Если данные пользователя переданы напрямую от VKID виджета
-      setUser(cleanUser);
-      setIsVKUser(true);
-      localStorage.setItem('wb_user', JSON.stringify(cleanUser));
-      localStorage.setItem('wb_is_vk_user', 'true');
-      
-      // Загрузка данных из Firestore
+  // Проверяем авторизацию при загрузке
+  useEffect(() => {
+    const savedUser = localStorage.getItem('wb_user');
+    const savedIsGuest = localStorage.getItem('wb_is_guest');
+    
+    if (savedUser && savedIsGuest === 'true') {
       try {
-        const userDoc = await getDoc(doc(db, 'users', cleanUser.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          // Обновляем локальное состояние данными из Firestore
-          if (data.goals) localStorage.setItem('wb_goals', JSON.stringify(data.goals));
-          if (data.analyticsShifts) localStorage.setItem('wb_shifts', JSON.stringify(data.analyticsShifts));
-          if (data.calendarData) localStorage.setItem('calendarData', JSON.stringify(data.calendarData));
-          if (data.workDays) localStorage.setItem('wb_work_days', JSON.stringify(data.workDays));
-        } else {
-          // Если данных нет, создаём пустой документ
-          const defaultData = {
-            goals: [],
-            analyticsShifts: [],
-            calendarData: {},
-            workDays: [],
-          };
-          await setDoc(doc(db, 'users', cleanUser.uid), defaultData);
-        }
-      } catch (firestoreError) {
-        console.error('Firestore error:', firestoreError);
+        const userData = JSON.parse(savedUser);
+        setUser(userData);
+        setIsGuestUser(true);
+      } catch (e) {
+        console.error('Error parsing saved user:', e);
+        localStorage.removeItem('wb_user');
+        localStorage.removeItem('wb_is_guest');
       }
-    } else {
-      // Старый способ через хук (для совместимости)
-      await handleVKSignIn();
     }
+  }, [setUser, setIsGuestUser]);
+
+  // Обработка URL параметров для быстрого доступа к вкладкам
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    
+    if (tabParam && ['calculator', 'schedule', 'analytics', 'goals'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, []);
+
+  // Обновление URL при смене вкладки (только для десктопа)
+  useEffect(() => {
+    if (window.innerWidth > 768) {
+      const url = new URL(window.location);
+      url.searchParams.set('tab', activeTab);
+      window.history.replaceState({}, '', url);
+    }
+  }, [activeTab]);
+
+  // Загрузка данных при входе через Google
+  const handleGoogleSignInWithData = async () => {
+    await handleGoogleSignIn();
   };
 
   // Вход как гость
   const handleGuestSignIn = () => {
-    setUser({ name: 'Гость', badge: 'guest', isVK: false });
+    const guestUser = { name: 'Гость', badge: 'guest', isGoogle: false };
+    setUser(guestUser);
+    setIsGuestUser(true);
+    localStorage.setItem('wb_user', JSON.stringify(guestUser));
+    localStorage.setItem('wb_is_guest', 'true');
   };
 
   // Выход из аккаунта
   const handleSignOut = () => {
     setUser(null);
-    setIsVKUser(false);
+    setIsGoogleUser(false);
+    setIsGuestUser(false);
+    localStorage.removeItem('wb_user');
+    localStorage.removeItem('wb_is_guest');
   };
+
+  // Свайпы для навигации
+  const handleSwipeLeft = () => {
+    const tabs = ["calculator", "schedule", "analytics", "goals"];
+    const currentIndex = tabs.indexOf(activeTab);
+    const nextIndex = (currentIndex + 1) % tabs.length;
+    setActiveTab(tabs[nextIndex]);
+  };
+
+  const handleSwipeRight = () => {
+    const tabs = ["calculator", "schedule", "analytics", "goals"];
+    const currentIndex = tabs.indexOf(activeTab);
+    const prevIndex = currentIndex === 0 ? tabs.length - 1 : currentIndex - 1;
+    setActiveTab(tabs[prevIndex]);
+  };
+
+  // Хук для свайпов
+  const swipeRef = useSwipe(handleSwipeLeft, handleSwipeRight);
 
   // Синхронизация с Firestore при изменении данных
   useEffect(() => {
-    if (user && isVKUser && user.uid) {
+    if (user && isGoogleUser && user.uid) {
       syncDataToFirestore({
         goals,
         analyticsShifts,
@@ -191,11 +227,11 @@ export default function App() {
         workDays,
       });
     }
-  }, [goals, analyticsShifts, calendarData, workDays, user, isVKUser]);
+  }, [goals, analyticsShifts, calendarData, workDays, user, isGoogleUser]);
 
-  // Обновление состояния после успешной авторизации через VK
+  // Обновление состояния после успешной авторизации через редирект
   useEffect(() => {
-    if (user && isVKUser) {
+    if (user && isGoogleUser) {
       // Обновляем состояние из localStorage, если данные были загружены из Firestore
       const storedGoals = localStorage.getItem('wb_goals');
       const storedShifts = localStorage.getItem('wb_shifts');
@@ -246,28 +282,15 @@ export default function App() {
         }
       }
     }
-  }, [user, isVKUser]);
+  }, [user, isGoogleUser, goals.length, analyticsShifts.length, calendarData, workDays.length]);
 
   // Обновление статистики пользователей
   useEffect(() => {
-    if (user && user.badge) {
-      // Очищаем объект пользователя от циклических ссылок
-      const cleanUser = {
-        name: user.name || '',
-        displayName: user.displayName || user.name || '',
-        badge: user.badge || '',
-        email: user.email || '',
-        photoURL: user.photoURL || '',
-        uid: user.uid || '',
-        isVK: user.isVK || false,
-        vkId: user.vkId || '',
-        vkDomain: user.vkDomain || ''
-      };
-
+    if (user) {
       let users = JSON.parse(localStorage.getItem('wb_users') || '[]');
-      const exists = users.some(u => u.badge === cleanUser.badge);
+      const exists = users.some(u => u.badge === user.badge);
       if (!exists) {
-        users.push(cleanUser);
+        users.push(user);
         localStorage.setItem('wb_users', JSON.stringify(users));
         setUsersCount(users.length);
       } else {
@@ -460,7 +483,7 @@ export default function App() {
   if (!user) {
     return (
       <AuthScreen
-        onVKSignIn={handleVKSignInWithData}
+        onGoogleSignIn={handleGoogleSignInWithData}
         onGuestSignIn={handleGuestSignIn}
         loadingSync={loadingSync}
         syncError={syncError}
@@ -469,7 +492,10 @@ export default function App() {
   }
 
   return (
-    <div className={`${darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"} min-h-screen font-sans transition-colors duration-500 flex flex-col items-center`}>
+    <div 
+      ref={swipeRef}
+      className={`${darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"} min-h-screen font-sans transition-colors duration-500 flex flex-col items-center`}
+    >
       <Header
         darkMode={darkMode}
         setDarkMode={setDarkMode}
@@ -485,8 +511,8 @@ export default function App() {
         setDarkMode={setDarkMode}
         showSettings={showSettings}
         user={user}
-        onVKSignIn={handleVKSignInWithData}
-        onVKSignOut={handleSignOut}
+        onGoogleSignIn={handleGoogleSignInWithData}
+        onGoogleSignOut={handleSignOut}
         onGuestSignIn={handleGuestSignIn}
       />
       

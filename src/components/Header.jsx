@@ -10,7 +10,7 @@ export function Header({
   showSettings
 }) {
   return (
-    <header className="w-full p-3 sm:p-4 flex justify-between items-center">
+    <header className="w-full p-3 sm:p-4 flex justify-between items-center pwa-header">
       <div className="flex items-center">
         <h1 className={`text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent ${darkMode ? '' : 'drop-shadow-sm'}`}>
           ShiftMate
@@ -18,7 +18,7 @@ export function Header({
         {showInstall && (
           <button
             onClick={handleInstallClick}
-            className={`ml-2 sm:ml-3 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg border border-purple-600 hover:from-blue-500 hover:to-purple-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 ${darkMode ? 'focus:ring-offset-gray-900' : 'focus:ring-offset-white'}`}
+            className={`ml-2 sm:ml-3 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg border border-purple-600 hover:from-blue-500 hover:to-purple-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 ${darkMode ? 'focus:ring-offset-gray-900' : 'focus:ring-offset-white'} btn-tap`}
             style={{ 
               minWidth: 'fit-content',
               letterSpacing: '0.02em', 
@@ -29,14 +29,23 @@ export function Header({
             <svg className="inline w-3 h-3 sm:w-4 sm:h-4 mr-1 -mt-0.5 align-middle" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
             </svg>
-            Установить
+            <span className="hidden sm:inline">Установить</span>
+            <span className="sm:hidden">📱</span>
           </button>
         )}
       </div>
-      <div className="flex items-center">
+      <div className="flex items-center space-x-2">
+        {/* Индикатор пользователя */}
+        {user && (
+          <div className={`hidden sm:flex items-center px-2 py-1 rounded-lg text-xs ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+            <span className="mr-1">👤</span>
+            <span className="truncate max-w-20">{user.name}</span>
+          </div>
+        )}
+        
         <button
           onClick={() => setShowSettings(!showSettings)}
-          className={`p-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400 ${
+          className={`p-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400 btn-tap ${
             showSettings 
               ? darkMode 
                 ? 'bg-purple-600/20 text-purple-400' 

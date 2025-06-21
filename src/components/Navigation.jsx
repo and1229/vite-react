@@ -1,28 +1,40 @@
 import React from 'react';
-import { TABS } from '../utils/constants';
 
 export function Navigation({ activeTab, setActiveTab, darkMode }) {
+  const tabs = [
+    { id: "calculator", label: "Калькулятор", icon: "🧮" },
+    { id: "schedule", label: "Расписание", icon: "📅" },
+    { id: "analytics", label: "Аналитика", icon: "📊" },
+    { id: "goals", label: "Цели", icon: "🎯" }
+  ];
+
   return (
-    <nav className={`w-full ${darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-white/90'} border-b sticky top-0 z-10 backdrop-blur-sm`}>
-      <div className="flex overflow-x-auto scrollbar-hide">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-shrink-0 px-4 py-3 font-medium transition-all duration-200 whitespace-nowrap min-w-0 ${
-              activeTab === tab.id
-                ? darkMode
-                  ? 'border-b-2 border-purple-500 text-purple-400 bg-gray-800/80'
-                  : 'border-b-2 border-purple-500 text-purple-600 bg-gray-50'
-                : darkMode
-                  ? 'hover:text-gray-300 hover:bg-gray-700/50 text-gray-400'
-                  : 'hover:text-purple-500 hover:bg-gray-100/50 text-gray-600'
-            }`}
-          >
-            <span className="text-sm sm:text-base">{tab.label}</span>
-          </button>
-        ))}
+    <div className="w-full">
+      {/* Индикатор свайпов для мобильных устройств */}
+      <div className="md:hidden text-center py-2 px-4">
+        <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'} flex items-center justify-center space-x-2`}>
+          <span>← Свайп для навигации →</span>
+        </div>
       </div>
-    </nav>
+      
+      <nav className={`w-full px-3 sm:px-4 py-2 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+        <div className="flex justify-between items-center max-w-4xl mx-auto">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-200 min-w-0 flex-1 ${
+                activeTab === tab.id
+                  ? `${darkMode ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-700'} shadow-sm`
+                  : `${darkMode ? 'text-gray-300 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`
+              }`}
+            >
+              <span className="text-lg sm:text-xl mb-1">{tab.icon}</span>
+              <span className="text-xs sm:text-sm font-medium truncate">{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+    </div>
   );
 } 
