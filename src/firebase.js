@@ -1,0 +1,29 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCW8yv8dSOFV75tAfOf6zEIdLbo5TWO6tc",
+  authDomain: "shiftmate-f8d70.firebaseapp.com",
+  projectId: "shiftmate-f8d70",
+  storageBucket: "shiftmate-f8d70.appspot.com",
+  messagingSenderId: "861383211364",
+  appId: "1:861383211364:web:1d2c3b47b8bf2da0672271",
+  measurementId: "G-EGNWKTJP6R"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
+// Экспорт для авторизации и Firestore
+export const auth = getAuth(app);
+export const provider = new GoogleAuthProvider();
+export const db = getFirestore(app);
+export { signInWithPopup, signOut };
