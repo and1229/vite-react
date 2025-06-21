@@ -1,5 +1,4 @@
 import React from 'react';
-import { MoonIcon, SunIcon } from './icons';
 
 export function Header({ 
   darkMode, 
@@ -11,8 +10,8 @@ export function Header({
   showSettings
 }) {
   return (
-    <header className="w-full p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-      <div className="flex items-center w-full sm:w-auto">
+    <header className="w-full p-3 sm:p-4 flex justify-between items-center">
+      <div className="flex items-center">
         <h1 className={`text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent ${darkMode ? '' : 'drop-shadow-sm'}`}>
           ShiftMate
         </h1>
@@ -34,16 +33,18 @@ export function Header({
           </button>
         )}
       </div>
-      <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto justify-end">
-        <button 
-          onClick={() => setDarkMode(!darkMode)} 
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400"
-        >
-          {darkMode ? <MoonIcon /> : <SunIcon />}
-        </button>
+      <div className="flex items-center">
         <button
           onClick={() => setShowSettings(!showSettings)}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400"
+          className={`p-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400 ${
+            showSettings 
+              ? darkMode 
+                ? 'bg-purple-600/20 text-purple-400' 
+                : 'bg-purple-100 text-purple-600'
+              : darkMode 
+                ? 'hover:bg-gray-700 text-gray-300' 
+                : 'hover:bg-gray-100 text-gray-600'
+          }`}
           title="Настройки"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

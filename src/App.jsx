@@ -119,13 +119,8 @@ export default function App() {
 
   // Загрузка данных при входе через Google
   const handleGoogleSignInWithData = async () => {
-    const data = await handleGoogleSignIn();
-    if (data) {
-      if (data.goals) setGoals(data.goals);
-      if (data.analyticsShifts) setAnalyticsShifts(data.analyticsShifts);
-      if (data.calendarData) setCalendarData(data.calendarData);
-      if (data.workDays) setWorkDays(data.workDays);
-    }
+    // Просто вызываем функцию входа - данные загрузятся автоматически через useEffect в useFirebase
+    await handleGoogleSignIn();
   };
 
   // Вход как гость
@@ -150,6 +145,61 @@ export default function App() {
       });
     }
   }, [goals, analyticsShifts, calendarData, workDays, user, isGoogleUser]);
+
+  // Обновление состояния после успешной авторизации через редирект
+  useEffect(() => {
+    if (user && isGoogleUser) {
+      // Обновляем состояние из localStorage, если данные были загружены из Firestore
+      const storedGoals = localStorage.getItem('wb_goals');
+      const storedShifts = localStorage.getItem('wb_shifts');
+      const storedCalendar = localStorage.getItem('calendarData');
+      const storedWorkDays = localStorage.getItem('wb_work_days');
+      
+      if (storedGoals) {
+        try {
+          const parsedGoals = JSON.parse(storedGoals);
+          if (parsedGoals.length !== goals.length) {
+            setGoals(parsedGoals);
+          }
+        } catch (e) {
+          console.error('Error parsing stored goals:', e);
+        }
+      }
+      
+      if (storedShifts) {
+        try {
+          const parsedShifts = JSON.parse(storedShifts);
+          if (parsedShifts.length !== analyticsShifts.length) {
+            setAnalyticsShifts(parsedShifts);
+          }
+        } catch (e) {
+          console.error('Error parsing stored shifts:', e);
+        }
+      }
+      
+      if (storedCalendar) {
+        try {
+          const parsedCalendar = JSON.parse(storedCalendar);
+          if (Object.keys(parsedCalendar).length !== Object.keys(calendarData).length) {
+            setCalendarData(parsedCalendar);
+          }
+        } catch (e) {
+          console.error('Error parsing stored calendar:', e);
+        }
+      }
+      
+      if (storedWorkDays) {
+        try {
+          const parsedWorkDays = JSON.parse(storedWorkDays);
+          if (parsedWorkDays.length !== workDays.length) {
+            setWorkDays(parsedWorkDays);
+          }
+        } catch (e) {
+          console.error('Error parsing stored work days:', e);
+        }
+      }
+    }
+  }, [user, isGoogleUser]);
 
   // Обновление статистики пользователей
   useEffect(() => {
