@@ -36,7 +36,7 @@ module.exports = {
       directory: path.join(__dirname, 'dist'),
     },
     port: 8080,
-    hot: 'only',
+    hot: false,
     liveReload: false,
     historyApiFallback: true,
     client: {
@@ -76,6 +76,8 @@ module.exports = {
       patterns: [
         { from: "manifest.json", to: "" },
         { from: "icon-192.png", to: "" },
+        { from: "icon-256.png", to: "" },
+        { from: "icon-384.png", to: "" },
         { from: "icon-512.png", to: "" },
         { from: "favicon.ico", to: "" },
         { from: "service-worker.js", to: "" },
