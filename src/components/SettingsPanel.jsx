@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 export function SettingsPanel({ 
   darkMode, 
@@ -6,15 +6,26 @@ export function SettingsPanel({
   showSettings,
   setShowSettings
 }) {
-  if (!showSettings) return null;
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    if (showSettings) {
+      const timer = setTimeout(() => setIsActive(true), 10);
+      return () => clearTimeout(timer);
+    } else {
+      setIsActive(false);
+    }
+  }, [showSettings]);
+
+  if (!showSettings && !isActive) return null;
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop"
+      className={`fixed inset-0 z-50 flex items-center justify-center modal-backdrop transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-0'}`}
       onClick={() => setShowSettings(false)}
     >
       <div 
-        className={`modal-enter ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} rounded-modern shadow-modern-xl p-6 w-full max-w-md mx-4`}
+        className={`rounded-modern shadow-modern-xl p-6 w-full max-w-md mx-4 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} ${isActive ? 'modal-enter-active' : 'modal-enter'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
