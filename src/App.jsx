@@ -86,7 +86,7 @@ export default function App() {
     syncDataToFirestore
   } = useFirebase();
 
-  // PWA установка - исправленная версия
+  // PWA установка - исправленная версия с диагностикой
   useEffect(() => {
     let deferredPrompt = null;
 
@@ -128,8 +128,47 @@ export default function App() {
       return false;
     };
 
+    // Диагностика PWA
+    const diagnosePWA = async () => {
+      console.log('=== PWA Диагностика ===');
+      console.log('HTTPS:', window.location.protocol === 'https:');
+      console.log('Service Worker:', 'serviceWorker' in navigator);
+      console.log('Push Manager:', 'PushManager' in window);
+      console.log('User Agent:', navigator.userAgent);
+      
+      // Проверяем manifest
+      try {
+        const manifestResponse = await fetch('/manifest.json');
+        if (manifestResponse.ok) {
+          const manifest = await manifestResponse.json();
+          console.log('Manifest загружен:', manifest.name);
+        } else {
+          console.error('Manifest не загружен:', manifestResponse.status);
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки manifest:', error);
+      }
+      
+      // Проверяем service worker
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            console.log('Service Worker зарегистрирован:', registration.active ? 'активен' : 'неактивен');
+          } else {
+            console.log('Service Worker не зарегистрирован');
+          }
+        } catch (error) {
+          console.error('Ошибка проверки Service Worker:', error);
+        }
+      }
+      
+      console.log('=== Конец диагностики ===');
+    };
+
     // Проверяем при загрузке
     checkIfInstalled();
+    diagnosePWA();
 
     window.addEventListener('beforeinstallprompt', handler);
     window.addEventListener('appinstalled', () => {
@@ -139,9 +178,19 @@ export default function App() {
       deferredPrompt = null;
     });
 
+    // Принудительно показываем кнопку для тестирования через 3 секунды
+    // (удалить после тестирования)
+    const testTimer = setTimeout(() => {
+      if (!deferredPrompt && !checkIfInstalled()) {
+        console.log('Принудительно показываем кнопку для тестирования');
+        setShowInstall(true);
+      }
+    }, 3000);
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
       window.removeEventListener('appinstalled', () => {});
+      clearTimeout(testTimer);
     };
   }, []);
 

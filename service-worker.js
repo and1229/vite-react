@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shiftmate-cache-v3';
+const CACHE_NAME = 'shiftmate-cache-v4';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -58,13 +58,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Логируем запросы для диагностики
+  console.log('SW Fetch:', event.request.url);
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
         // Возвращаем кэшированный ответ, если он есть
         if (response) {
+          console.log('SW Cache hit:', event.request.url);
           return response;
         }
+
+        console.log('SW Cache miss:', event.request.url);
 
         // Клонируем запрос, так как он может быть использован только один раз
         const fetchRequest = event.request.clone();
@@ -81,10 +87,12 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME)
             .then((cache) => {
               cache.put(event.request, responseToCache);
+              console.log('SW Cached:', event.request.url);
             });
 
           return response;
-        }).catch(() => {
+        }).catch((error) => {
+          console.error('SW Fetch error:', error);
           // Если сеть недоступна, возвращаем fallback для HTML страниц
           if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
             return caches.match('/');
@@ -142,4 +150,12 @@ self.addEventListener('error', (event) => {
 
 self.addEventListener('unhandledrejection', (event) => {
   console.error('Service Worker unhandled rejection:', event.reason);
+});
+
+// Сообщения от основного потока
+self.addEventListener('message', (event) => {
+  console.log('SW Message received:', event.data);
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
