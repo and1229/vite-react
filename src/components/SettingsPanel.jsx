@@ -3,13 +3,20 @@ import React from 'react';
 export function SettingsPanel({ 
   darkMode, 
   setDarkMode, 
-  showSettings 
+  showSettings,
+  setShowSettings
 }) {
   if (!showSettings) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop">
-      <div className={`modal-enter ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} rounded-modern shadow-modern-xl p-6 w-full max-w-md mx-4`}>
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop"
+      onClick={() => setShowSettings(false)}
+    >
+      <div 
+        className={`modal-enter ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} rounded-modern shadow-modern-xl p-6 w-full max-w-md mx-4`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gradient-primary">Настройки</h2>
           <button
