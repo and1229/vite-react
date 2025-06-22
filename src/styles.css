@@ -1,428 +1,257 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
 
-/* Base Reset */
+/* Кастомные CSS переменные */
+:root {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+/* Базовые стили */
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
 body {
-  font-family: 'Inter', sans-serif;
-  line-height: 1.6;
-  transition: background-color 0.3s, color 0.3s;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+/* Современные скругления */
+.rounded-modern {
+  border-radius: 16px;
 }
 
-button {
-  cursor: pointer;
-  font-family: inherit;
+.rounded-modern-sm {
+  border-radius: 12px;
 }
 
-input, textarea, button {
-  outline: none;
-  border: none;
-  transition: all 0.2s ease-in-out;
+.rounded-modern-lg {
+  border-radius: 20px;
 }
 
-/* Hide scrollbar for navigation */
-.scrollbar-hide {
-  -ms-overflow-style: none;  /* Internet Explorer 10+ */
-  scrollbar-width: none;  /* Firefox */
+.rounded-modern-xl {
+  border-radius: 24px;
 }
 
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Safari and Chrome */
+/* Современные тени */
+.shadow-modern {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-/* Mobile optimizations */
-@media (max-width: 640px) {
-  .container {
-    padding: 0.75rem;
-  }
-  
-  .card {
-    padding: 0.75rem;
-  }
-  
-  .modal-content {
-    margin: 1rem;
-    padding: 1rem;
-  }
+.shadow-modern-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Container & Layout */
-.container {
-  max-width: 768px;
-  margin: 0 auto;
-  padding: 1rem;
+.shadow-modern-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-.max-w-md {
-  max-width: 480px;
-}
-
-.grid-cols-7 {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 0.5rem;
-}
-
-/* Buttons */
-.btn {
-  padding-left: 1rem;
-  padding-right: 1rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  transition-property: all;
-  transition-duration: 150ms;
-}
-
-.btn-primary {
-  background-image: linear-gradient(to right, #7c3aed, #3b82f6); /* from-purple-600 to-blue-500 */
-  color: #fff;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px 0 rgb(0 0 0 / 0.06); /* shadow-md */
-  transition: all 0.15s;
-}
-.btn-primary:hover {
-  background-image: linear-gradient(to right, #8b5cf6, #60a5fa); /* hover:from-purple-500 hover:to-blue-400 */
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05); /* hover:shadow-lg */
-}
-
-.btn-secondary {
-  background-color: #374151; /* bg-gray-700 */
-  color: #fff;
-  transition: background 0.15s;
-}
-.btn-secondary:hover {
-  background-color: #4b5563; /* hover:bg-gray-600 */
-}
-
-.btn-danger {
-  background-color: #b91c1c; /* bg-red-700 */
-  color: #fff;
-  transition: background 0.15s;
-}
-.btn-danger:hover {
-  background-color: #dc2626; /* hover:bg-red-600 */
-}
-
-/* Cards */
-.card {
-  padding: 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid #374151; /* border-gray-700 */
-  background-color: #1f2937; /* bg-gray-800 */
-  margin-bottom: 1rem;
-}
-
-.card-header {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-/* Calendar Day Button */
-.day-button {
-  padding: 0.5rem;
-  border-radius: 9999px;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.day-button:hover {
-  background-color: rgba(88, 28, 135, 0.3); /* bg-purple-900/30 */
-}
-
-.day-button.today {
-  background-color: #a78bfa; /* bg-purple-500 */
-  color: #fff;
-}
-
-.day-button.has-shift {
-  background-color: #16a34a; /* bg-green-600 */
-  color: #fff;
-}
-
-/* Shift Details Modal */
-.modal {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0,0,0,0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-}
-
-.modal-content {
-  padding: 1.5rem;
-  border-radius: 0.5rem;
-  width: 100%;
-  max-width: 480px;
-  background-color: #1f2937; /* bg-gray-800 */
-  color: #fff;
-}
-
-.modal-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-}
-
-/* Input Fields */
-.input {
-  width: 100%;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-radius: 0.25rem;
-  border: 1px solid #4b5563; /* border-gray-600 */
-  background-color: #1f2937; /* bg-gray-800 */
-  transition: box-shadow 0.2s;
-}
-.input:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px #a78bfa; /* focus:ring-2 focus:ring-purple-500 */
-}
-
-/* Analytics Cards */
-.analytics-card {
-  padding: 1rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm */
-  border: 1px solid #374151; /* border-gray-700 */
-  background-color: #1f2937; /* bg-gray-800 */
-}
-
-.analytics-title {
-  font-size: 0.875rem;
-  color: #9ca3af; /* text-gray-400 */
-}
-
-.analytics-value {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-top: 0.25rem;
-}
-
-.purple {
-  color: #a78bfa; /* text-purple-400 */
-}
-
-.blue {
-  color: #60a5fa; /* text-blue-400 */
-}
-
-.green {
-  color: #4ade80; /* text-green-400 */
-}
-
-.teal {
-  color: #2dd4bf; /* Tailwind's text-teal-400 */
-}
-
-/* Animations */
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Text Gradient */
-.text-gradient {
-  background-image: linear-gradient(to right, #a78bfa, #3b82f6);
+/* Градиентный текст */
+.text-gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  color: transparent;
 }
 
-/* Кастомные стили для приложения */
-@layer components {
-  /* Анимации для свайпов */
-  .swipe-transition {
-    transition: transform 0.3s ease-in-out;
+/* Анимации */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-  
-  .swipe-left {
-    transform: translateX(-100%);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  
-  .swipe-right {
-    transform: translateX(100%);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
   }
-  
-  /* Улучшения для мобильных устройств */
-  @media (max-width: 768px) {
-    .mobile-optimized {
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
-    }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
-  
-  /* Скрытие скроллбара для webkit браузеров */
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
   }
-  
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
-  
-  /* Улучшения для PWA */
-  @media (display-mode: standalone) {
-    .pwa-header {
-      padding-top: env(safe-area-inset-top);
-    }
-    
-    .pwa-footer {
-      padding-bottom: env(safe-area-inset-bottom);
-    }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
   }
-  
-  /* Анимации для кнопок */
-  .btn-tap {
-    transition: transform 0.1s ease-in-out;
+  50% {
+    opacity: 0.5;
   }
-  
-  .btn-tap:active {
-    transform: scale(0.95);
+}
+
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
   }
-  
-  /* Улучшения для темной темы */
-  .dark {
-    color-scheme: dark;
+  40%, 43% {
+    transform: translate3d(0, -30px, 0);
   }
-  
-  /* Стили для индикатора загрузки */
-  .loading-dots {
-    display: inline-block;
+  70% {
+    transform: translate3d(0, -15px, 0);
   }
-  
-  .loading-dots::after {
-    content: '';
-    animation: dots 1.5s steps(5, end) infinite;
+  90% {
+    transform: translate3d(0, -4px, 0);
   }
-  
-  @keyframes dots {
-    0%, 20% {
-      content: '';
-    }
-    40% {
-      content: '.';
-    }
-    60% {
-      content: '..';
-    }
-    80%, 100% {
-      content: '...';
-    }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
   }
-  
-  /* Улучшения для форм */
-  .form-input {
-    @apply transition-all duration-200;
+  100% {
+    background-position: calc(200px + 100%) 0;
   }
-  
-  .form-input:focus {
-    @apply ring-2 ring-purple-500 ring-offset-2;
-  }
-  
-  /* Стили для модальных окон */
+}
+
+/* Классы анимаций */
+.animate-fadeIn {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.5s ease-out;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.4s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Модальные окна */
   .modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
-    background-color: rgba(0, 0, 0, 0.5);
-  }
-  
-  /* Анимации для появления элементов */
-  .fade-in {
-    animation: fadeIn 0.3s ease-in-out;
-  }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  /* Стили для уведомлений */
-  .notification {
-    animation: slideIn 0.3s ease-out;
-  }
-  
-  @keyframes slideIn {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-  
-  /* Стили для рекламной кнопки */
+}
+
+.modal-enter {
+  opacity: 0;
+  transform: scale(0.9) translateY(-20px);
+}
+
+.modal-enter-active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Кнопки */
+.micro-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.micro-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.micro-button:hover::before {
+  left: 100%;
+}
+
+.micro-button:active {
+  transform: scale(0.95);
+}
+
+/* Карточки с анимацией */
+.chart-animate {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chart-animate:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Рекламная кнопка */
   .ad-button {
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    transform-origin: center;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ad-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s;
+}
+
+.ad-button:hover::before {
+  left: 100%;
   }
   
   .ad-button:hover {
-    transform: scale(1.05) translateY(-2px);
-    box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);
-  }
-  
-  .ad-button:active {
-    transform: scale(0.98);
-  }
-  
-  /* Анимация появления рекламной кнопки */
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.4), 0 10px 10px -5px rgba(59, 130, 246, 0.3);
+}
+
   .ad-button-enter {
     opacity: 0;
-    transform: translateY(20px) scale(0.95);
+  transform: translateY(20px) scale(0.9);
   }
   
   .ad-button-enter-active {
     opacity: 1;
     transform: translateY(0) scale(1);
-    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
-  /* Градиентная анимация для рекламной кнопки */
+/* Градиент для рекламной кнопки */
   .ad-button-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
     background-size: 200% 200%;
     animation: gradientShift 3s ease infinite;
   }
@@ -439,186 +268,21 @@ input, textarea, button {
     }
   }
   
-  /* Микроанимации для кнопок */
-  .micro-button {
-    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-    transform-origin: center;
-  }
-  
-  .micro-button:hover {
-    transform: translateY(-1px) scale(1.02);
-  }
-  
-  .micro-button:active {
-    transform: translateY(0) scale(0.98);
-  }
-  
-  /* Анимации для карточек */
-  .card-enter {
-    opacity: 0;
-    transform: translateY(20px) scale(0.95);
-  }
-  
-  .card-enter-active {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  
-  /* Параллакс эффекты */
-  .parallax-bg {
-    background-attachment: fixed;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-  }
-  
-  /* Улучшенные тени */
-  .shadow-modern {
-    box-shadow: 
-      0 1px 3px 0 rgba(0, 0, 0, 0.1),
-      0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  }
-  
-  .shadow-modern-lg {
-    box-shadow: 
-      0 10px 15px -3px rgba(0, 0, 0, 0.1),
-      0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  }
-  
-  .shadow-modern-xl {
-    box-shadow: 
-      0 20px 25px -5px rgba(0, 0, 0, 0.1),
-      0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  }
-  
-  /* Анимации для графиков */
-  .chart-animate {
-    animation: chartFadeIn 0.8s ease-out;
-  }
-  
-  @keyframes chartFadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  /* Улучшенная типографика */
-  .text-gradient-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  
-  .text-gradient-success {
-    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  
-  /* Анимации для списков */
-  .list-item-enter {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  
-  .list-item-enter-active {
-    opacity: 1;
-    transform: translateX(0);
-    transition: all 0.3s ease-out;
-  }
-  
-  /* Hover эффекты для интерактивных элементов */
-  .hover-lift {
-    transition: transform 0.2s ease-out;
-  }
-  
-  .hover-lift:hover {
-    transform: translateY(-2px);
-  }
-  
-  /* Анимации для модальных окон */
-  .modal-enter {
-    opacity: 0;
-    transform: scale(0.9) translateY(-20px);
-  }
-  
-  .modal-enter-active {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  
-  /* Улучшенные скругления */
+/* Улучшенные стили для мобильных устройств */
+@media (max-width: 768px) {
   .rounded-modern {
-    border-radius: 16px;
+    border-radius: 12px;
   }
   
   .rounded-modern-lg {
-    border-radius: 24px;
+    border-radius: 16px;
   }
   
-  /* Анимации для загрузки */
-  .loading-pulse {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  .shadow-modern-lg {
+    box-shadow: 0 8px 12px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
   
-  @keyframes pulse {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
-  }
-  
-  /* Анимации для успешных действий */
-  .success-bounce {
-    animation: successBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }
-  
-  @keyframes successBounce {
-    0% {
-      transform: scale(0.3);
-    }
-    50% {
-      transform: scale(1.05);
-    }
-    70% {
-      transform: scale(0.9);
-    }
-    100% {
-      transform: scale(1);
-    }
-  }
-  
-  /* Улучшенные отступы и пространство */
-  .space-modern {
-    padding: 1.5rem;
-  }
-  
-  .space-modern-lg {
-    padding: 2rem;
-  }
-  
-  /* Анимации для календаря */
-  .calendar-day-hover {
-    transition: all 0.2s ease-out;
-  }
-  
-  .calendar-day-hover:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-  
-  /* Анимации для навигации */
+  /* Улучшенная навигация для мобильных */
   .nav-tab-active {
     position: relative;
   }
@@ -633,17 +297,318 @@ input, textarea, button {
     height: 3px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 2px;
-    animation: tabIndicator 0.3s ease-out;
   }
-  
-  @keyframes tabIndicator {
+}
+
+/* Темная тема */
+.dark {
+  color-scheme: dark;
+}
+
+.dark .shadow-modern {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+.dark .shadow-modern-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+.dark .shadow-modern-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+/* Улучшенные стили для скроллбара */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.8);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.8);
+}
+
+/* Улучшенные стили для фокуса */
+.focus-visible:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* Стили для загрузки */
+.loading-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.dark .loading-skeleton {
+  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Улучшенные стили для инпутов */
+input, textarea, select {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.dark input:focus, .dark textarea:focus, .dark select:focus {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+/* Стили для уведомлений */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.3s ease-out;
+}
+
+.notification.success {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+}
+
+.notification.error {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  color: white;
+}
+
+.notification.warning {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  color: white;
+}
+
+/* Стили для прогресс-баров */
+.progress-bar {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  height: 6px;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Стили для бейджей */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge.success {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+}
+
+.badge.warning {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  color: white;
+}
+
+.badge.error {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  color: white;
+}
+
+/* Стили для карточек с градиентами */
+.card-gradient {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.dark .card-gradient {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+/* Стили для кнопок с градиентами */
+.btn-gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-gradient-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-gradient-secondary {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-gradient-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(240, 147, 251, 0.3);
+}
+
+/* Стили для анимации появления элементов */
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
     from {
-      width: 0;
       opacity: 0;
-    }
-    to {
-      width: 20px;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Стили для пульсирующих элементов */
+.pulse-ring {
+  position: relative;
+}
+
+.pulse-ring::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
       opacity: 1;
     }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
   }
+}
+
+/* Стили для улучшенной типографики */
+.text-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dark .text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Стили для улучшенных hover эффектов */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.dark .hover-lift:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+/* Стили для улучшенных состояний загрузки */
+.loading-dots {
+  display: inline-block;
+}
+
+.loading-dots::after {
+  content: '';
+  animation: loading-dots 1.5s infinite;
+}
+
+@keyframes loading-dots {
+  0%, 20% {
+    content: '';
+  }
+  40% {
+    content: '.';
+  }
+  60% {
+    content: '..';
+  }
+  80%, 100% {
+    content: '...';
+  }
+}
+
+/* Стили для улучшенной доступности */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Стили для улучшенных переходов между страницами */
+.page-transition {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.page-transition-enter {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.page-transition-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateX(-20px);
 }
