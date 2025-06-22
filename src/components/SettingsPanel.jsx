@@ -92,10 +92,10 @@ export function SettingsPanel({
           </div>
 
           {/* Дополнительные настройки */}
+          {/* 
           <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
             <h3 className="font-semibold text-lg">Приложение</h3>
             
-            {/* Уведомления */}
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-medium">Уведомления</h4>
@@ -115,7 +115,6 @@ export function SettingsPanel({
               </button>
             </div>
 
-            {/* Экспорт данных */}
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-medium">Экспорт данных</h4>
@@ -146,6 +145,7 @@ export function SettingsPanel({
               </button>
             </div>
           </div>
+          */}
 
           {/* Информация о приложении */}
           <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
