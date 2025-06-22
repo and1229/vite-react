@@ -14,12 +14,24 @@ provider.setCustomParameters({
 
 export function useFirebase() {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('wb_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('wb_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (error) {
+      console.error('Error parsing saved user:', error);
+      localStorage.removeItem('wb_user');
+      return null;
+    }
   });
   const [isGoogleUser, setIsGoogleUser] = useState(() => {
-    const saved = localStorage.getItem('wb_is_google_user');
-    return saved ? JSON.parse(saved) : false;
+    try {
+      const saved = localStorage.getItem('wb_is_google_user');
+      return saved ? JSON.parse(saved) : false;
+    } catch (error) {
+      console.error('Error parsing saved google user state:', error);
+      localStorage.removeItem('wb_is_google_user');
+      return false;
+    }
   });
   const [loadingSync, setLoadingSync] = useState(false);
   const [syncError, setSyncError] = useState('');
@@ -68,7 +80,11 @@ export function useFirebase() {
           } catch (firestoreError) {
             console.error('Firestore error:', firestoreError);
             // Если Firestore недоступен, продолжаем работу в локальном режиме
-            setSyncError('Синхронизация временно недоступна. Данные сохраняются локально.');
+            if (firestoreError.message && firestoreError.message.includes('PERMISSION_DENIED')) {
+              setSyncError('Ошибка доступа к Firebase. Данные сохраняются локально.');
+            } else {
+              setSyncError('Синхронизация временно недоступна. Данные сохраняются локально.');
+            }
           }
         }
       } catch (error) {
@@ -86,7 +102,12 @@ export function useFirebase() {
       }
     };
 
-    checkRedirectResult();
+    // Добавляем задержку для стабилизации Firebase
+    const timer = setTimeout(() => {
+      checkRedirectResult();
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const handleGoogleSignIn = async () => {

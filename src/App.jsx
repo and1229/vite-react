@@ -86,7 +86,7 @@ export default function App() {
     syncDataToFirestore
   } = useFirebase();
 
-  // PWA установка - улучшенная версия
+  // PWA установка - исправленная версия
   useEffect(() => {
     let deferredPrompt = null;
 
@@ -129,24 +129,7 @@ export default function App() {
     };
 
     // Проверяем при загрузке
-    const isInstalled = checkIfInstalled();
-    
-    // Если не установлено, показываем кнопку через некоторое время
-    if (!isInstalled) {
-      const timer = setTimeout(() => {
-        // Проверяем еще раз через 2 секунды
-        if (!checkIfInstalled()) {
-          // Если приложение не установлено и нет deferredPrompt, 
-          // но есть поддержка PWA, показываем кнопку
-          if ('serviceWorker' in navigator && 'PushManager' in window) {
-            console.log('PWA supported, showing install button');
-            setShowInstall(true);
-          }
-        }
-      }, 2000);
-      
-      return () => clearTimeout(timer);
-    }
+    checkIfInstalled();
 
     window.addEventListener('beforeinstallprompt', handler);
     window.addEventListener('appinstalled', () => {
@@ -164,6 +147,7 @@ export default function App() {
 
   const handleInstallClick = () => {
     if (deferredPrompt) {
+      console.log('Triggering install prompt...');
       deferredPrompt.prompt();
       deferredPrompt.userChoice.then((choiceResult) => {
         if (choiceResult.outcome === 'accepted') {
@@ -173,10 +157,14 @@ export default function App() {
         }
         setDeferredPrompt(null);
         setShowInstall(false);
+      }).catch((error) => {
+        console.error('Error during install prompt:', error);
+        setDeferredPrompt(null);
+        setShowInstall(false);
       });
     } else {
       // Fallback для случаев, когда нет deferredPrompt
-      console.log('No deferred prompt available, trying manual install');
+      console.log('No deferred prompt available, showing manual install instructions');
       
       // Показываем инструкции для ручной установки
       if (navigator.userAgent.includes('Chrome')) {
