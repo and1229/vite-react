@@ -22,7 +22,11 @@ export const formatDate = (dateString) => {
 
 export const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
 
-export const getFirstDayOfMonth = (month, year) => new Date(year, month, 1).getDay();
+export const getFirstDayOfMonth = (month, year) => {
+  const day = new Date(year, month, 1).getDay();
+  // Конвертируем американский формат (0=воскресенье) в европейский (1=понедельник)
+  return day === 0 ? 7 : day;
+};
 
 export const formatDateForInput = (date) => {
   return date.toISOString().split("T")[0];

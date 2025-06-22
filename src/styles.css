@@ -393,4 +393,257 @@ input, textarea, button {
       opacity: 1;
     }
   }
+  
+  /* Стили для рекламной кнопки */
+  .ad-button {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+  }
+  
+  .ad-button:hover {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);
+  }
+  
+  .ad-button:active {
+    transform: scale(0.98);
+  }
+  
+  /* Анимация появления рекламной кнопки */
+  .ad-button-enter {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  
+  .ad-button-enter-active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  
+  /* Градиентная анимация для рекламной кнопки */
+  .ad-button-gradient {
+    background-size: 200% 200%;
+    animation: gradientShift 3s ease infinite;
+  }
+  
+  @keyframes gradientShift {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+  
+  /* Микроанимации для кнопок */
+  .micro-button {
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+  }
+  
+  .micro-button:hover {
+    transform: translateY(-1px) scale(1.02);
+  }
+  
+  .micro-button:active {
+    transform: translateY(0) scale(0.98);
+  }
+  
+  /* Анимации для карточек */
+  .card-enter {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  
+  .card-enter-active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  
+  /* Параллакс эффекты */
+  .parallax-bg {
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+  
+  /* Улучшенные тени */
+  .shadow-modern {
+    box-shadow: 
+      0 1px 3px 0 rgba(0, 0, 0, 0.1),
+      0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  }
+  
+  .shadow-modern-lg {
+    box-shadow: 
+      0 10px 15px -3px rgba(0, 0, 0, 0.1),
+      0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  
+  .shadow-modern-xl {
+    box-shadow: 
+      0 20px 25px -5px rgba(0, 0, 0, 0.1),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+  
+  /* Анимации для графиков */
+  .chart-animate {
+    animation: chartFadeIn 0.8s ease-out;
+  }
+  
+  @keyframes chartFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Улучшенная типографика */
+  .text-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .text-gradient-success {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Анимации для списков */
+  .list-item-enter {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  
+  .list-item-enter-active {
+    opacity: 1;
+    transform: translateX(0);
+    transition: all 0.3s ease-out;
+  }
+  
+  /* Hover эффекты для интерактивных элементов */
+  .hover-lift {
+    transition: transform 0.2s ease-out;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+  
+  /* Анимации для модальных окон */
+  .modal-enter {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  
+  .modal-enter-active {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  
+  /* Улучшенные скругления */
+  .rounded-modern {
+    border-radius: 16px;
+  }
+  
+  .rounded-modern-lg {
+    border-radius: 24px;
+  }
+  
+  /* Анимации для загрузки */
+  .loading-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
+  /* Анимации для успешных действий */
+  .success-bounce {
+    animation: successBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  
+  @keyframes successBounce {
+    0% {
+      transform: scale(0.3);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    70% {
+      transform: scale(0.9);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  
+  /* Улучшенные отступы и пространство */
+  .space-modern {
+    padding: 1.5rem;
+  }
+  
+  .space-modern-lg {
+    padding: 2rem;
+  }
+  
+  /* Анимации для календаря */
+  .calendar-day-hover {
+    transition: all 0.2s ease-out;
+  }
+  
+  .calendar-day-hover:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Анимации для навигации */
+  .nav-tab-active {
+    position: relative;
+  }
+  
+  .nav-tab-active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 3px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 2px;
+    animation: tabIndicator 0.3s ease-out;
+  }
+  
+  @keyframes tabIndicator {
+    from {
+      width: 0;
+      opacity: 0;
+    }
+    to {
+      width: 20px;
+      opacity: 1;
+    }
+  }
 }

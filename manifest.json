@@ -57,9 +57,9 @@
       ]
     },
     {
-      "name": "Расписание",
-      "short_name": "Расписание",
-      "description": "Просмотр расписания смен",
+      "name": "График",
+      "short_name": "График",
+      "description": "Просмотр графика смен",
       "url": "/?tab=schedule",
       "icons": [
         {

@@ -3,20 +3,13 @@ import React from 'react';
 export function Navigation({ activeTab, setActiveTab, darkMode }) {
   const tabs = [
     { id: "calculator", label: "Калькулятор", icon: "🧮" },
-    { id: "schedule", label: "Расписание", icon: "📅" },
+    { id: "schedule", label: "График", icon: "📅" },
     { id: "analytics", label: "Аналитика", icon: "📊" },
     { id: "goals", label: "Цели", icon: "🎯" }
   ];
 
   return (
     <div className="w-full">
-      {/* Индикатор свайпов для мобильных устройств */}
-      <div className="md:hidden text-center py-2 px-4">
-        <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'} flex items-center justify-center space-x-2`}>
-          <span>← Свайп для навигации →</span>
-        </div>
-      </div>
-      
       <nav className={`w-full px-3 sm:px-4 py-2 ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
         <div className="flex justify-between items-center max-w-4xl mx-auto">
           {tabs.map((tab) => (

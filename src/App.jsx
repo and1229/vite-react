@@ -21,12 +21,9 @@ import { Schedule } from './components/Schedule';
 import { Analytics } from './components/Analytics';
 import { Goals } from './components/Goals';
 import { ShiftEditModal } from './components/ShiftEditModal';
-import { SettingsPanel } from './components/SettingsModal';
-import { AuthScreen } from './components/AuthScreen';
 
 // Импорт хуков
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { useFirebase } from './hooks/useFirebase';
 import { useSwipe } from './hooks/useSwipe';
 
 // Регистрация Chart.js
@@ -50,7 +47,6 @@ export default function App() {
   const [calendarData, setCalendarData] = useLocalStorage('calendarData', {});
   const [workDays, setWorkDays] = useLocalStorage('wb_work_days', []);
   const [usersCount, setUsersCount] = useLocalStorage('wb_users_count', 0);
-  const [isGuestUser, setIsGuestUser] = useLocalStorage('wb_is_guest', false);
 
   // Состояния компонентов
   const [activeTab, setActiveTab] = useState("calculator");
@@ -62,6 +58,7 @@ export default function App() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstall, setShowInstall] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAdButton, setShowAdButton] = useState(false);
 
   // Состояния калькулятора
   const [targetEarnings, setTargetEarnings] = useState("");
@@ -72,19 +69,6 @@ export default function App() {
   const [shiftType, setShiftType] = useState('day');
   const [shiftStatus, setShiftStatus] = useState('regular');
   const [shiftNote, setShiftNote] = useState('');
-
-  // Firebase хук
-  const {
-    user,
-    setUser,
-    isGoogleUser,
-    setIsGoogleUser,
-    loadingSync,
-    syncError,
-    handleGoogleSignIn,
-    handleGoogleSignOut,
-    syncDataToFirestore
-  } = useFirebase();
 
   // PWA установка - исправленная версия с диагностикой
   useEffect(() => {
@@ -178,14 +162,14 @@ export default function App() {
       deferredPrompt = null;
     });
 
-    // Принудительно показываем кнопку для тестирования через 3 секунды
+    // Принудительно показываем кнопку для тестирования через 1 секунду
     // (удалить после тестирования)
     const testTimer = setTimeout(() => {
       if (!deferredPrompt && !checkIfInstalled()) {
         console.log('Принудительно показываем кнопку для тестирования');
         setShowInstall(true);
       }
-    }, 3000);
+    }, 1000);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
@@ -232,165 +216,20 @@ export default function App() {
     else document.documentElement.classList.remove("dark");
   }, [darkMode]);
 
-  // Проверяем авторизацию при загрузке
+  // Показываем рекламную кнопку через 5 секунд
   useEffect(() => {
-    const savedUser = localStorage.getItem('wb_user');
-    const savedIsGuest = localStorage.getItem('wb_is_guest');
-    
-    if (savedUser && savedIsGuest === 'true') {
-      try {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-        setIsGuestUser(true);
-      } catch (e) {
-        console.error('Error parsing saved user:', e);
-        localStorage.removeItem('wb_user');
-        localStorage.removeItem('wb_is_guest');
-      }
-    }
-  }, [setUser, setIsGuestUser]);
+    const adTimer = setTimeout(() => {
+      setShowAdButton(true);
+    }, 5000);
 
-  // Обработка URL параметров для быстрого доступа к вкладкам
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tabParam = urlParams.get('tab');
-    
-    if (tabParam && ['calculator', 'schedule', 'analytics', 'goals'].includes(tabParam)) {
-      setActiveTab(tabParam);
-    }
+    return () => clearTimeout(adTimer);
   }, []);
-
-  // Обновление URL при смене вкладки (только для десктопа)
-  useEffect(() => {
-    if (window.innerWidth > 768) {
-      const url = new URL(window.location);
-      url.searchParams.set('tab', activeTab);
-      window.history.replaceState({}, '', url);
-    }
-  }, [activeTab]);
-
-  // Загрузка данных при входе через Google
-  const handleGoogleSignInWithData = async () => {
-    await handleGoogleSignIn();
-  };
-
-  // Вход как гость
-  const handleGuestSignIn = () => {
-    const guestUser = { name: 'Гость', badge: 'guest', isGoogle: false };
-    setUser(guestUser);
-    setIsGuestUser(true);
-    localStorage.setItem('wb_user', JSON.stringify(guestUser));
-    localStorage.setItem('wb_is_guest', 'true');
-  };
-
-  // Выход из аккаунта
-  const handleSignOut = () => {
-    setUser(null);
-    setIsGoogleUser(false);
-    setIsGuestUser(false);
-    localStorage.removeItem('wb_user');
-    localStorage.removeItem('wb_is_guest');
-  };
-
-  // Свайпы для навигации
-  const handleSwipeLeft = () => {
-    const tabs = ["calculator", "schedule", "analytics", "goals"];
-    const currentIndex = tabs.indexOf(activeTab);
-    const nextIndex = (currentIndex + 1) % tabs.length;
-    setActiveTab(tabs[nextIndex]);
-  };
-
-  const handleSwipeRight = () => {
-    const tabs = ["calculator", "schedule", "analytics", "goals"];
-    const currentIndex = tabs.indexOf(activeTab);
-    const prevIndex = currentIndex === 0 ? tabs.length - 1 : currentIndex - 1;
-    setActiveTab(tabs[prevIndex]);
-  };
-
-  // Хук для свайпов
-  const swipeRef = useSwipe(handleSwipeLeft, handleSwipeRight);
-
-  // Синхронизация с Firestore при изменении данных
-  useEffect(() => {
-    if (user && isGoogleUser && user.uid) {
-      syncDataToFirestore({
-        goals,
-        analyticsShifts,
-        calendarData,
-        workDays,
-      });
-    }
-  }, [goals, analyticsShifts, calendarData, workDays, user, isGoogleUser]);
-
-  // Обновление состояния после успешной авторизации через редирект
-  useEffect(() => {
-    if (user && isGoogleUser) {
-      // Обновляем состояние из localStorage, если данные были загружены из Firestore
-      const storedGoals = localStorage.getItem('wb_goals');
-      const storedShifts = localStorage.getItem('wb_shifts');
-      const storedCalendar = localStorage.getItem('calendarData');
-      const storedWorkDays = localStorage.getItem('wb_work_days');
-      
-      if (storedGoals) {
-        try {
-          const parsedGoals = JSON.parse(storedGoals);
-          if (parsedGoals.length !== goals.length) {
-            setGoals(parsedGoals);
-          }
-        } catch (e) {
-          console.error('Error parsing stored goals:', e);
-        }
-      }
-      
-      if (storedShifts) {
-        try {
-          const parsedShifts = JSON.parse(storedShifts);
-          if (parsedShifts.length !== analyticsShifts.length) {
-            setAnalyticsShifts(parsedShifts);
-          }
-        } catch (e) {
-          console.error('Error parsing stored shifts:', e);
-        }
-      }
-      
-      if (storedCalendar) {
-        try {
-          const parsedCalendar = JSON.parse(storedCalendar);
-          if (Object.keys(parsedCalendar).length !== Object.keys(calendarData).length) {
-            setCalendarData(parsedCalendar);
-          }
-        } catch (e) {
-          console.error('Error parsing stored calendar:', e);
-        }
-      }
-      
-      if (storedWorkDays) {
-        try {
-          const parsedWorkDays = JSON.parse(storedWorkDays);
-          if (parsedWorkDays.length !== workDays.length) {
-            setWorkDays(parsedWorkDays);
-          }
-        } catch (e) {
-          console.error('Error parsing stored work days:', e);
-        }
-      }
-    }
-  }, [user, isGoogleUser, goals.length, analyticsShifts.length, calendarData, workDays.length]);
 
   // Обновление статистики пользователей
   useEffect(() => {
-    if (user) {
-      let users = JSON.parse(localStorage.getItem('wb_users') || '[]');
-      const exists = users.some(u => u.badge === user.badge);
-      if (!exists) {
-        users.push(user);
-        localStorage.setItem('wb_users', JSON.stringify(users));
-        setUsersCount(users.length);
-      } else {
-        setUsersCount(users.length);
-      }
-    }
-  }, [user, setUsersCount]);
+    let users = JSON.parse(localStorage.getItem('wb_users') || '[]');
+    setUsersCount(users.length);
+  }, [setUsersCount]);
 
   // Яндекс.Метрика
   useEffect(() => {
@@ -572,21 +411,8 @@ export default function App() {
     return acc;
   }, {});
 
-  // Если пользователь не авторизован, показываем экран входа
-  if (!user) {
-    return (
-      <AuthScreen
-        onGoogleSignIn={handleGoogleSignInWithData}
-        onGuestSignIn={handleGuestSignIn}
-        loadingSync={loadingSync}
-        syncError={syncError}
-      />
-    );
-  }
-
   return (
     <div 
-      ref={swipeRef}
       className={`${darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"} min-h-screen font-sans transition-colors duration-500 flex flex-col items-center`}
     >
       <Header
@@ -594,19 +420,8 @@ export default function App() {
         setDarkMode={setDarkMode}
         showInstall={showInstall}
         handleInstallClick={handleInstallClick}
-        user={user}
+        showSettings={showSettings}
         setShowSettings={setShowSettings}
-        showSettings={showSettings}
-      />
-      
-      <SettingsPanel
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
-        showSettings={showSettings}
-        user={user}
-        onGoogleSignIn={handleGoogleSignInWithData}
-        onGoogleSignOut={handleSignOut}
-        onGuestSignIn={handleGuestSignIn}
       />
       
       <Navigation
@@ -684,17 +499,26 @@ export default function App() {
           href="https://pxl.leads.su/click/e2a6684949541fd83e9e15e94a82fee9?erid=2W5zFJLdzVv"
           target="_blank"
           rel="noopener noreferrer"
-          className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 text-white font-bold text-sm sm:text-base shadow-md hover:shadow-xl hover:brightness-110 transition-all duration-300 ${darkMode ? '' : 'shadow-lg'}`}
+          className={`ad-button px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-purple-500 via-blue-500 to-purple-600 ad-button-gradient text-white font-semibold text-sm sm:text-base shadow-lg ${darkMode ? 'shadow-purple-500/25' : 'shadow-purple-500/20'} ${showAdButton ? 'ad-button-enter-active' : 'ad-button-enter'}`}
           style={{
             minWidth: 160,
             textAlign: 'center',
-            letterSpacing: '0.05em',
-            fontFamily: `'Segoe UI', sans-serif`,
-            boxShadow: darkMode ? '0 4px 10px rgba(128, 90, 213, 0.3)' : '0 6px 16px rgba(128, 90, 213, 0.10)',
+            letterSpacing: '0.02em',
+            fontFamily: `'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif`,
+            boxShadow: darkMode 
+              ? '0 8px 25px rgba(139, 92, 246, 0.3), 0 4px 10px rgba(59, 130, 246, 0.2)' 
+              : '0 8px 25px rgba(139, 92, 246, 0.15), 0 4px 10px rgba(59, 130, 246, 0.1)',
+            backdropFilter: 'blur(10px)',
+            border: darkMode ? '1px solid rgba(139, 92, 246, 0.2)' : '1px solid rgba(139, 92, 246, 0.1)',
           }}
           title="Бери деньги — плати 0%"
         >
-          Бери деньги — плати 0%
+          <span className="flex items-center justify-center space-x-2">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+            </svg>
+            <span>Бери деньги — плати 0%</span>
+          </span>
         </a>
       </div>
 
