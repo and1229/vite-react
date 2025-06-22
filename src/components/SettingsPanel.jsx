@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { VKAuth } from './VKAuth';
+import VKAuth from './VKAuth';
 
 export function SettingsPanel({ 
   darkMode, 
-  setDarkMode, 
+  toggleDarkMode, 
   showSettings,
-  setShowSettings
+  setShowSettings,
+  vkUser,
+  setVkUser
 }) {
   const [isActive, setIsActive] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     if (showSettings) {
@@ -18,15 +19,6 @@ export function SettingsPanel({
       setIsActive(false);
     }
   }, [showSettings]);
-
-  const handleAuthSuccess = (user) => {
-    setCurrentUser(user);
-  };
-
-  const handleAuthError = (error) => {
-    console.error('Auth error:', error);
-    // Можно добавить уведомление об ошибке
-  };
 
   if (!showSettings && !isActive) return null;
 
@@ -56,15 +48,9 @@ export function SettingsPanel({
           <div className="space-y-3">
             <h3 className="font-semibold text-lg">Аккаунт</h3>
             <VKAuth 
-              darkMode={darkMode}
-              onAuthSuccess={handleAuthSuccess}
-              onAuthError={handleAuthError}
+              onAuthSuccess={setVkUser} 
+              onLogout={() => setVkUser(null)}
             />
-            {!currentUser && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                Авторизация необязательна, но позволяет синхронизировать данные
-              </p>
-            )}
           </div>
 
           {/* Переключение темы */}
@@ -77,7 +63,7 @@ export function SettingsPanel({
                 </p>
               </div>
               <button
-                onClick={() => setDarkMode(!darkMode)}
+                onClick={toggleDarkMode}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
                   darkMode ? 'bg-purple-600' : 'bg-gray-200'
                 }`}
@@ -90,62 +76,6 @@ export function SettingsPanel({
               </button>
             </div>
           </div>
-
-          {/* Дополнительные настройки */}
-          {/* 
-          <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
-            <h3 className="font-semibold text-lg">Приложение</h3>
-            
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium">Уведомления</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Напоминания о целях
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  if ('Notification' in window) {
-                    Notification.requestPermission();
-                  }
-                }}
-                className="px-3 py-1 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-modern transition-colors"
-              >
-                Включить
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium">Экспорт данных</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Сохранить все данные
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  const data = {
-                    shifts: JSON.parse(localStorage.getItem('wb_shifts') || '[]'),
-                    goals: JSON.parse(localStorage.getItem('wb_goals') || '[]'),
-                    workDays: JSON.parse(localStorage.getItem('wb_work_days') || '[]'),
-                    exportDate: new Date().toISOString()
-                  };
-                  
-                  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `shiftmate-backup-${new Date().toISOString().split('T')[0]}.json`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                }}
-                className="px-3 py-1 text-sm bg-green-500 hover:bg-green-600 text-white rounded-modern transition-colors"
-              >
-                Экспорт
-              </button>
-            </div>
-          </div>
-          */}
 
           {/* Информация о приложении */}
           <div className="pt-4 border-t border-gray-200 dark:border-gray-700">

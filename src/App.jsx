@@ -448,7 +448,7 @@ export default function App() {
       
       <SettingsPanel
         darkMode={darkMode}
-        setDarkMode={setDarkMode}
+        toggleDarkMode={() => setDarkMode(!darkMode)}
         showSettings={showSettings}
         setShowSettings={setShowSettings}
       />
