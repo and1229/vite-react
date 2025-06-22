@@ -21,6 +21,7 @@ import { Schedule } from './components/Schedule';
 import { Analytics } from './components/Analytics';
 import { Goals } from './components/Goals';
 import { ShiftEditModal } from './components/ShiftEditModal';
+import { SettingsPanel } from './components/SettingsPanel';
 
 // Импорт хуков
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -69,6 +70,24 @@ export default function App() {
   const [shiftType, setShiftType] = useState('day');
   const [shiftStatus, setShiftStatus] = useState('regular');
   const [shiftNote, setShiftNote] = useState('');
+
+  // Свайпы для навигации
+  const handleSwipeLeft = () => {
+    const tabs = ["calculator", "schedule", "analytics", "goals"];
+    const currentIndex = tabs.indexOf(activeTab);
+    const nextIndex = (currentIndex + 1) % tabs.length;
+    setActiveTab(tabs[nextIndex]);
+  };
+
+  const handleSwipeRight = () => {
+    const tabs = ["calculator", "schedule", "analytics", "goals"];
+    const currentIndex = tabs.indexOf(activeTab);
+    const prevIndex = currentIndex === 0 ? tabs.length - 1 : currentIndex - 1;
+    setActiveTab(tabs[prevIndex]);
+  };
+
+  // Хук для свайпов
+  const swipeRef = useSwipe(handleSwipeLeft, handleSwipeRight);
 
   // PWA установка - исправленная версия с диагностикой
   useEffect(() => {
@@ -413,6 +432,7 @@ export default function App() {
 
   return (
     <div 
+      ref={swipeRef}
       className={`${darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"} min-h-screen font-sans transition-colors duration-500 flex flex-col items-center`}
     >
       <Header
@@ -420,6 +440,13 @@ export default function App() {
         setDarkMode={setDarkMode}
         showInstall={showInstall}
         handleInstallClick={handleInstallClick}
+        showSettings={showSettings}
+        setShowSettings={setShowSettings}
+      />
+      
+      <SettingsPanel
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
         showSettings={showSettings}
         setShowSettings={setShowSettings}
       />
