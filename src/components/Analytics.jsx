@@ -266,19 +266,19 @@ export function Analytics({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-        <div className={`card-enter ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900 border border-gray-200'} p-6 rounded-modern shadow-modern-lg hover-lift transition-all duration-300`}>
+        <div className={`${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900 border border-gray-200'} p-6 rounded-modern shadow-modern-lg hover-lift transition-all duration-300`}>
           <h3 className="text-sm text-gray-400 mb-2">Всего заработано</h3>
           <p className="text-3xl font-bold text-gradient-success">{stats.totalEarnings.toFixed(2)} ₽</p>
         </div>
-        <div className={`card-enter ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900 border border-gray-200'} p-6 rounded-modern shadow-modern-lg hover-lift transition-all duration-300`}>
+        <div className={`${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900 border border-gray-200'} p-6 rounded-modern shadow-modern-lg hover-lift transition-all duration-300`}>
           <h3 className="text-sm text-gray-400 mb-2">Всего пиков</h3>
           <p className="text-3xl font-bold text-gradient-primary">{stats.totalPicks}</p>
         </div>
-        <div className={`card-enter ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900 border border-gray-200'} p-6 rounded-modern shadow-modern-lg hover-lift transition-all duration-300`}>
+        <div className={`${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900 border border-gray-200'} p-6 rounded-modern shadow-modern-lg hover-lift transition-all duration-300`}>
           <h3 className="text-sm text-gray-400 mb-2">Средний заработок в день</h3>
           <p className="text-3xl font-bold text-gradient-success">{stats.averageEarnings.toFixed(2)} ₽</p>
         </div>
-        <div className={`card-enter ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900 border border-gray-200'} p-6 rounded-modern shadow-modern-lg hover-lift transition-all duration-300`}>
+        <div className={`${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900 border border-gray-200'} p-6 rounded-modern shadow-modern-lg hover-lift transition-all duration-300`}>
           <h3 className="text-sm text-gray-400 mb-2">Среднее количество пиков</h3>
           <p className="text-3xl font-bold text-gradient-primary">{stats.averagePicks.toFixed(2)}</p>
         </div>
