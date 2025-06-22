@@ -1,6 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
+const Dotenv = require('dotenv-webpack');
 
 module.exports = {
   mode: 'development',
@@ -25,6 +26,10 @@ module.exports = {
           'css-loader',
           'postcss-loader',
         ],
+      },
+      {
+        test: /\.(png|jpe?g|gif|svg)$/i,
+        type: 'asset/resource',
       },
     ],
   },
@@ -78,5 +83,6 @@ module.exports = {
         { from: "service-worker.js", to: "" },
       ],
     }),
+    new Dotenv(),
   ],
 }; 
