@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shiftmate-cache-v4';
+const CACHE_NAME = 'shiftmate-cache-v5';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -21,6 +21,7 @@ self.addEventListener('install', (event) => {
       })
       .then(() => {
         console.log('All resources cached successfully');
+        // Автоматически активируем новый service worker
         return self.skipWaiting();
       })
       .catch((error) => {
@@ -44,59 +45,88 @@ self.addEventListener('activate', (event) => {
       );
     }).then(() => {
       console.log('Service Worker activated');
+      // Немедленно берем под контроль все клиенты
       return self.clients.claim();
+    }).then(() => {
+      // Уведомляем все клиенты о необходимости перезагрузки
+      return self.clients.matchAll().then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({ type: 'RELOAD_PAGE' });
+        });
+      });
     })
   );
 });
 
-// Перехват запросов
+// Перехват запросов с улучшенной стратегией кэширования
 self.addEventListener('fetch', (event) => {
   // Пропускаем запросы к Firebase и другим внешним API
   if (event.request.url.includes('firebase') || 
       event.request.url.includes('googleapis') ||
-      event.request.url.includes('gstatic')) {
+      event.request.url.includes('gstatic') ||
+      event.request.url.includes('telegram')) {
     return;
   }
 
-  // Логируем запросы для диагностики
-  console.log('SW Fetch:', event.request.url);
+  // Для HTML запросов используем стратегию "Network First"
+  if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Клонируем ответ для кэширования
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          return response;
+        })
+        .catch(() => {
+          // Если сеть недоступна, возвращаем кэшированную версию
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
 
+  // Для остальных ресурсов используем стратегию "Cache First"
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
         // Возвращаем кэшированный ответ, если он есть
         if (response) {
-          console.log('SW Cache hit:', event.request.url);
+          // В фоне обновляем кэш
+          fetch(event.request)
+            .then((fetchResponse) => {
+              if (fetchResponse.status === 200) {
+                const responseToCache = fetchResponse.clone();
+                caches.open(CACHE_NAME)
+                  .then((cache) => {
+                    cache.put(event.request, responseToCache);
+                  });
+              }
+            })
+            .catch(() => {
+              // Игнорируем ошибки обновления кэша
+            });
           return response;
         }
 
-        console.log('SW Cache miss:', event.request.url);
-
-        // Клонируем запрос, так как он может быть использован только один раз
-        const fetchRequest = event.request.clone();
-
-        return fetch(fetchRequest).then((response) => {
+        // Если в кэше нет, загружаем из сети
+        return fetch(event.request).then((response) => {
           // Проверяем, что получили валидный ответ
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
 
-          // Клонируем ответ, так как он может быть использован только один раз
+          // Клонируем ответ для кэширования
           const responseToCache = response.clone();
-
           caches.open(CACHE_NAME)
             .then((cache) => {
               cache.put(event.request, responseToCache);
-              console.log('SW Cached:', event.request.url);
             });
 
           return response;
-        }).catch((error) => {
-          console.error('SW Fetch error:', error);
-          // Если сеть недоступна, возвращаем fallback для HTML страниц
-          if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
-            return caches.match('/');
-          }
         });
       })
   );

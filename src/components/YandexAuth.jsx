@@ -7,7 +7,19 @@ export function YandexAuth({ darkMode }) {
   const containerRef = useRef(null);
   const isInitialized = useRef(false); // Флаг для предотвращения повторной инициализации
 
+  // Проверяем, находимся ли мы на localhost
+  const isLocalhost = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '[::1]' || 
+                     window.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/);
+
   useEffect(() => {
+    // На localhost отключаем Яндекс авторизацию
+    if (isLocalhost) {
+      setAuthStatus('error');
+      console.log('Яндекс авторизация отключена на localhost из-за CSP ограничений');
+      return;
+    }
+
     // Эта функция будет вызвана только один раз, когда SDK будет готов
     const initYandexButton = () => {
       if (isInitialized.current || !containerRef.current || !window.YaAuthSuggest) {
@@ -21,9 +33,7 @@ export function YandexAuth({ darkMode }) {
         {
           client_id: 'd6caa6411d0b42bcaf159feb628dbcfa',
           response_type: 'token',
-          redirect_uri: process.env.NODE_ENV === 'development'
-            ? 'http://localhost:8080/yandex-auth.html'
-            : 'https://shift-mate.ru/yandex-auth.html'
+          redirect_uri: 'https://shift-mate.ru/yandex-auth.html'
         },
         window.location.origin,
         {
@@ -72,7 +82,7 @@ export function YandexAuth({ darkMode }) {
       initYandexButton();
     }
     
-  }, [darkMode, user]);
+  }, [darkMode, user, isLocalhost]);
 
   const handleLogout = () => {
     setUser(null);
@@ -88,6 +98,16 @@ export function YandexAuth({ darkMode }) {
           <p className="text-xs text-gray-400">{user.email}</p>
         </div>
         <button onClick={handleLogout} className="btn-secondary">Выйти</button>
+      </div>
+    );
+  }
+
+  // На localhost показываем сообщение о недоступности
+  if (isLocalhost) {
+    return (
+      <div className="text-center p-4">
+        <p className="text-sm text-gray-500 mb-2">Яндекс авторизация недоступна на localhost</p>
+        <p className="text-xs text-gray-400">Для тестирования авторизации используйте продакшен версию</p>
       </div>
     );
   }

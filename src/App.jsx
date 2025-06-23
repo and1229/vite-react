@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -26,14 +26,15 @@ import { SettingsPanel } from './components/SettingsPanel';
 import { AnimatedTabContent } from './components/AnimatedTabContent';
 import { TermsOfUse } from './components/TermsOfUse';
 import { FeedbackModal } from './components/FeedbackModal';
-import { UpdateNotification } from './components/UpdateNotification';
-
-// Импорт хуков
-import { useLocalStorage } from './hooks/useLocalStorage';
 import { useSwipe } from './hooks/useSwipe';
-
-// Импорт сервис-воркера
+import { useHaptic } from './hooks/useHaptic';
+import { useLocalStorage } from './hooks/useLocalStorage';
+import { useShiftCalculator } from './hooks/useShiftCalculator';
+import { useAnalytics } from './hooks/useAnalytics';
+import { useFirebase } from './hooks/useFirebase';
+import { useMobileGestures } from './hooks/useMobileGestures';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
+import './styles.css';
 
 // Регистрация Chart.js
 ChartJS.register(
@@ -87,8 +88,6 @@ export default function App() {
   const [showTerms, setShowTerms] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showAdButton, setShowAdButton] = useState(false);
-  const [showUpdateNotification, setShowUpdateNotification] = useState(false);
-  const [waitingWorker, setWaitingWorker] = useState(null);
 
   // Состояния калькулятора
   const [targetEarnings, setTargetEarnings] = useState("");
@@ -486,16 +485,25 @@ export default function App() {
 
     serviceWorkerRegistration.register({
       onUpdate: registration => {
-        console.log('New version detected!');
-        setWaitingWorker(registration.waiting);
-        setShowUpdateNotification(true);
+        console.log('New version detected! Auto-updating...');
+        
+        // Автоматически обновляем приложение
+        if (registration.waiting) {
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          registration.waiting.addEventListener('statechange', event => {
+            if (event.target.state === 'activated') {
+              console.log('New version activated, reloading...');
+              window.location.reload();
+            }
+          });
+        }
       },
       onSuccess: registration => {
         console.log('Service worker registered successfully');
       }
     });
 
-    // Дополнительная проверка обновлений каждые 30 минут
+    // Дополнительная проверка обновлений каждые 15 минут
     const checkForUpdates = () => {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then((registration) => {
@@ -504,24 +512,25 @@ export default function App() {
       }
     };
 
-    const updateInterval = setInterval(checkForUpdates, 30 * 60 * 1000); // 30 минут
+    const updateInterval = setInterval(checkForUpdates, 15 * 60 * 1000); // 15 минут
+
+    // Проверка обновлений при фокусе на приложении
+    const handleFocus = () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.update();
+        });
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
 
     return () => {
       clearInterval(updateInterval);
+      window.removeEventListener('focus', handleFocus);
       delete window.forceUpdate;
     };
   }, []);
-
-  const handleUpdate = () => {
-    if (waitingWorker) {
-      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
-      waitingWorker.addEventListener('statechange', event => {
-        if (event.target.state === 'activated') {
-          window.location.reload();
-        }
-      });
-    }
-  };
 
   return (
     <div 
@@ -666,8 +675,6 @@ export default function App() {
       {showFeedback && (
         <FeedbackModal onClose={() => setShowFeedback(false)} darkMode={darkMode} />
       )}
-
-      {showUpdateNotification && <UpdateNotification onUpdate={handleUpdate} />}
     </div>
   );
 }

@@ -28,6 +28,12 @@ export function register(config) {
       if (isLocalhost) {
         // На localhost отключаем сервис-воркер для разработки
         console.log('Service worker disabled on localhost for development');
+        // Удаляем существующий service worker если он есть
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (let registration of registrations) {
+            registration.unregister();
+          }
+        });
         return;
       } else {
         // На продакшене регистрируем сервис-воркер
@@ -64,6 +70,18 @@ function registerValidSW(swUrl, config) {
           }
         };
       };
+
+      // Слушаем изменения состояния service worker
+      registration.addEventListener('updatefound', () => {
+        console.log('Service worker update found');
+      });
+
+      // Слушаем сообщения от service worker
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'RELOAD_PAGE') {
+          window.location.reload();
+        }
+      });
     })
     .catch((error) => {
       console.error('Error during service worker registration:', error);
