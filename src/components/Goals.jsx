@@ -4,14 +4,14 @@ import { GoalItem } from './GoalItem';
 export function Goals({ goals, darkMode, onToggle, onDelete, onUpdate }) {
   return (
     <section className="space-y-6">
-      <h2 className="text-xl font-semibold">Цели/смены</h2>
+      <h2 className="text-xl font-semibold text-gradient-primary">Цели/смены</h2>
       {goals.length === 0 ? (
         <div className="p-8 text-center bg-gray-800 rounded-lg border border-gray-700">
           <p className="text-gray-400">Нет поставленных целей. Начните планировать!</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {goals.map((goal, index) => (
+          {goals.filter(g => g).map((goal, index) => (
             <GoalItem
               key={index}
               goal={goal}

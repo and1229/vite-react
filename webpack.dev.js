@@ -1,6 +1,8 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
+const Dotenv = require('dotenv-webpack');
+const webpack = require('webpack');
 
 module.exports = {
   mode: 'development',
@@ -25,6 +27,10 @@ module.exports = {
           'css-loader',
           'postcss-loader',
         ],
+      },
+      {
+        test: /\.(png|jpe?g|gif|svg)$/i,
+        type: 'asset/resource',
       },
     ],
   },
@@ -65,18 +71,22 @@ module.exports = {
     },
   },
   plugins: [
+    new webpack.DefinePlugin({
+      'process.env.NODE_ENV': JSON.stringify('development'),
+    }),
     new HtmlWebpackPlugin({
-      template: './index.html',
-      filename: 'index.html',
+      template: './public/index.html',
     }),
     new CopyPlugin({
       patterns: [
         { from: "manifest.json", to: "" },
+        { from: "public/yandex-auth.html", to: "" },
         { from: "icon-192.png", to: "" },
         { from: "icon-512.png", to: "" },
         { from: "favicon.ico", to: "" },
         { from: "service-worker.js", to: "" },
       ],
     }),
+    new Dotenv(),
   ],
 }; 

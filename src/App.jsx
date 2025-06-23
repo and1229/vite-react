@@ -23,10 +23,17 @@ import { Analytics } from './components/Analytics';
 import { Goals } from './components/Goals';
 import { ShiftEditModal } from './components/ShiftEditModal';
 import { SettingsPanel } from './components/SettingsPanel';
+import { AnimatedTabContent } from './components/AnimatedTabContent';
+import { TermsOfUse } from './components/TermsOfUse';
+import { FeedbackModal } from './components/FeedbackModal';
+import { UpdateNotification } from './components/UpdateNotification';
 
 // Импорт хуков
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useSwipe } from './hooks/useSwipe';
+
+// Импорт сервис-воркера
+import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 // Регистрация Chart.js
 ChartJS.register(
@@ -43,25 +50,45 @@ ChartJS.register(
 );
 
 export default function App() {
+  // Миграция старых ключей localStorage
+  useEffect(() => {
+    const migrateKey = (oldKey, newKey) => {
+      const oldData = localStorage.getItem(oldKey);
+      if (oldData) {
+        localStorage.setItem(newKey, oldData);
+        localStorage.removeItem(oldKey);
+      }
+    };
+    migrateKey('wb_dark_mode', 'app_dark_mode');
+    migrateKey('wb_goals', 'app_goals');
+    migrateKey('wb_shifts', 'app_shifts');
+    migrateKey('wb_work_days', 'app_work_days');
+    migrateKey('wb_users_count', 'app_users_count');
+  }, []);
+
   // Состояния с localStorage
-  const [darkMode, setDarkMode] = useLocalStorage('wb_dark_mode', true);
-  const [goals, setGoals] = useLocalStorage('wb_goals', []);
-  const [analyticsShifts, setAnalyticsShifts] = useLocalStorage('wb_shifts', []);
+  const [darkMode, setDarkMode] = useLocalStorage('app_dark_mode', true);
+  const [goals, setGoals] = useLocalStorage('app_goals', []);
+  const [analyticsShifts, setAnalyticsShifts] = useLocalStorage('app_shifts', []);
   const [calendarData, setCalendarData] = useLocalStorage('calendarData', {});
-  const [workDays, setWorkDays] = useLocalStorage('wb_work_days', []);
-  const [usersCount, setUsersCount] = useLocalStorage('wb_users_count', 0);
+  const [workDays, setWorkDays] = useLocalStorage('app_work_days', []);
+  const [usersCount, setUsersCount] = useLocalStorage('app_users_count', 0);
+  const [selectedPeriod, setSelectedPeriod] = useState('week');
 
   // Состояния компонентов
   const [activeTab, setActiveTab] = useState("calculator");
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedShiftIndex, setSelectedShiftIndex] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedPeriod, setSelectedPeriod] = useState('week');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstall, setShowInstall] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [showAdButton, setShowAdButton] = useState(false);
+  const [showUpdateNotification, setShowUpdateNotification] = useState(false);
+  const [waitingWorker, setWaitingWorker] = useState(null);
 
   // Состояния калькулятора
   const [targetEarnings, setTargetEarnings] = useState("");
@@ -248,8 +275,10 @@ export default function App() {
 
   // Обновление статистики пользователей
   useEffect(() => {
-    let users = JSON.parse(localStorage.getItem('wb_users') || '[]');
-    setUsersCount(users.length);
+    // Эта логика больше не нужна, так как `usersCount` берется из localStorage,
+    // а авторизация теперь через Яндекс.
+    // let users = JSON.parse(localStorage.getItem('wb_users') || '[]');
+    // setUsersCount(users.length);
   }, [setUsersCount]);
 
   // Яндекс.Метрика
@@ -290,6 +319,7 @@ export default function App() {
           amount: earnings,
           rate: rate,
           picks: picksNeeded,
+          hours: hours,
           date: localDate,
           type: shiftType,
           status: shiftStatus,
@@ -299,6 +329,7 @@ export default function App() {
           amount: earnings,
           rate: rate,
           picks: picksNeeded,
+          hours: hours,
           date: localDate,
           type: shiftType,
           status: shiftStatus,
@@ -432,6 +463,66 @@ export default function App() {
     return acc;
   }, {});
 
+  useEffect(() => {
+    // Добавляем глобальную функцию для тестирования обновлений
+    window.forceUpdate = () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.unregister().then(() => {
+            if ('caches' in window) {
+              caches.keys().then((cacheNames) => {
+                return Promise.all(
+                  cacheNames.map((cacheName) => {
+                    return caches.delete(cacheName);
+                  })
+                );
+              });
+            }
+            window.location.reload();
+          });
+        });
+      }
+    };
+
+    serviceWorkerRegistration.register({
+      onUpdate: registration => {
+        console.log('New version detected!');
+        setWaitingWorker(registration.waiting);
+        setShowUpdateNotification(true);
+      },
+      onSuccess: registration => {
+        console.log('Service worker registered successfully');
+      }
+    });
+
+    // Дополнительная проверка обновлений каждые 30 минут
+    const checkForUpdates = () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.update();
+        });
+      }
+    };
+
+    const updateInterval = setInterval(checkForUpdates, 30 * 60 * 1000); // 30 минут
+
+    return () => {
+      clearInterval(updateInterval);
+      delete window.forceUpdate;
+    };
+  }, []);
+
+  const handleUpdate = () => {
+    if (waitingWorker) {
+      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+      waitingWorker.addEventListener('statechange', event => {
+        if (event.target.state === 'activated') {
+          window.location.reload();
+        }
+      });
+    }
+  };
+
   return (
     <div 
       ref={swipeRef}
@@ -448,9 +539,10 @@ export default function App() {
       
       <SettingsPanel
         darkMode={darkMode}
-        setDarkMode={setDarkMode}
+        toggleDarkMode={() => setDarkMode(!darkMode)}
         showSettings={showSettings}
         setShowSettings={setShowSettings}
+        onShowFeedback={() => setShowFeedback(true)}
       />
       
       <Navigation
@@ -459,68 +551,73 @@ export default function App() {
         darkMode={darkMode}
       />
       
-      <main className="container mx-auto p-3 sm:p-4 max-w-4xl w-full">
-        {activeTab === "calculator" && (
-          <Calculator
-            darkMode={darkMode}
-            shiftDate={shiftDate}
-            setShiftDate={setShiftDate}
-            targetEarnings={targetEarnings}
-            setTargetEarnings={setTargetEarnings}
-            ratePerPick={ratePerPick}
-            setRatePerPick={setRatePerPick}
-            workHours={workHours}
-            setWorkHours={setWorkHours}
-            breakInterval={breakInterval}
-            setBreakInterval={setBreakInterval}
-            shiftType={shiftType}
-            setShiftType={setShiftType}
-            shiftNote={shiftNote}
-            setShiftNote={setShiftNote}
-            addGoalFromShift={addGoalFromShift}
-          />
-        )}
+      <main className="container mx-auto p-3 sm:p-4 max-w-4xl w-full transition-all duration-300">
+        <AnimatedTabContent activeTab={activeTab} darkMode={darkMode} animationType="slide">
+          <div data-tab="calculator">
+            <Calculator
+              darkMode={darkMode}
+              shiftDate={shiftDate}
+              setShiftDate={setShiftDate}
+              targetEarnings={targetEarnings}
+              setTargetEarnings={setTargetEarnings}
+              ratePerPick={ratePerPick}
+              setRatePerPick={setRatePerPick}
+              workHours={workHours}
+              setWorkHours={setWorkHours}
+              breakInterval={breakInterval}
+              setBreakInterval={setBreakInterval}
+              shiftType={shiftType}
+              setShiftType={setShiftType}
+              shiftNote={shiftNote}
+              setShiftNote={setShiftNote}
+              addGoalFromShift={addGoalFromShift}
+            />
+          </div>
 
-        {activeTab === "schedule" && (
-          <Schedule
-            darkMode={darkMode}
-            shifts={shiftsByDay}
-            loadShift={loadShiftToCalculator}
-            deleteShift={deleteShift}
-            openShiftDetails={openShiftDetails}
-            currentDate={currentDate}
-            setCurrentDate={setCurrentDate}
-            prevMonth={prevMonth}
-            nextMonth={nextMonth}
-            workDays={workDays}
-            toggleWorkDay={toggleWorkDay}
-          />
-        )}
+          <div data-tab="schedule">
+            <Schedule
+              darkMode={darkMode}
+              shifts={shiftsByDay}
+              loadShift={loadShiftToCalculator}
+              deleteShift={deleteShift}
+              openShiftDetails={openShiftDetails}
+              currentDate={currentDate}
+              setCurrentDate={setCurrentDate}
+              prevMonth={prevMonth}
+              nextMonth={nextMonth}
+              workDays={workDays}
+              toggleWorkDay={toggleWorkDay}
+            />
+          </div>
 
-        {activeTab === "analytics" && (
-          <Analytics
-            darkMode={darkMode}
-            analyticsShifts={analyticsShifts}
-            goals={goals}
-            calendarData={calendarData}
-            selectedPeriod={selectedPeriod}
-            setSelectedPeriod={setSelectedPeriod}
-          />
-        )}
+          <div data-tab="analytics">
+            <Analytics
+              darkMode={darkMode}
+              analyticsShifts={analyticsShifts}
+              goals={goals}
+              calendarData={calendarData}
+              selectedPeriod={selectedPeriod}
+              setSelectedPeriod={setSelectedPeriod}
+            />
+          </div>
 
-        {activeTab === "goals" && (
-          <Goals
-            goals={goals}
-            darkMode={darkMode}
-            onToggle={toggleGoalCompletion}
-            onDelete={deleteGoal}
-            onUpdate={handleGoalUpdate}
-          />
-        )}
+          <div data-tab="goals">
+            <Goals
+              goals={goals}
+              darkMode={darkMode}
+              onToggle={toggleGoalCompletion}
+              onDelete={deleteGoal}
+              onUpdate={handleGoalUpdate}
+            />
+          </div>
+        </AnimatedTabContent>
       </main>
 
       <footer className={`mt-auto py-3 sm:py-4 px-3 sm:px-4 text-center text-xs sm:text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400 bg-white/80 border-t border-gray-200'}`}>
-        ShiftMate © {new Date().getFullYear()} 
+        ShiftMate © {new Date().getFullYear()} | 
+        <button onClick={() => setShowTerms(true)} className="ml-1 underline hover:text-purple-400 transition-colors">
+          Условия использования
+        </button>
       </footer>
       
       <div className="w-full flex justify-center pb-4 sm:pb-6 px-3 sm:px-4">
@@ -561,6 +658,16 @@ export default function App() {
           darkMode={darkMode}
         />
       )}
+
+      {showTerms && (
+        <TermsOfUse onClose={() => setShowTerms(false)} darkMode={darkMode} />
+      )}
+
+      {showFeedback && (
+        <FeedbackModal onClose={() => setShowFeedback(false)} darkMode={darkMode} />
+      )}
+
+      {showUpdateNotification && <UpdateNotification onUpdate={handleUpdate} />}
     </div>
   );
 }

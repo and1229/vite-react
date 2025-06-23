@@ -23,11 +23,11 @@ export function Calculator({
   addGoalFromShift 
 }) {
   const shiftCalculation = useShiftCalculator(targetEarnings, ratePerPick, workHours, breakInterval);
-  const { hapticButton, hapticSuccess } = useHaptic();
+  const { hapticButton } = useHaptic();
 
   const handleAddGoal = () => {
-    hapticSuccess();
     addGoalFromShift();
+    hapticButton();
   };
 
   return (
@@ -116,15 +116,9 @@ export function Calculator({
       <div className="flex justify-center mt-6">
         <button
           onClick={handleAddGoal}
-          disabled={!shiftCalculation}
-          {...hapticButton()}
-          className={`micro-button px-8 py-4 rounded-modern font-semibold transition-all duration-300 ${
-            !shiftCalculation
-              ? (darkMode ? "bg-gray-600 text-gray-400 cursor-not-allowed" : "bg-gray-200 text-gray-400 border border-gray-200 cursor-not-allowed")
-              : (darkMode ? "bg-gradient-to-r from-purple-600 to-blue-500 text-white shadow-modern-lg hover:shadow-modern-xl" : "bg-gradient-to-r from-purple-600 to-blue-500 text-white shadow-modern-lg hover:shadow-modern-xl")
-          }`}
+          className="w-full btn-primary"
         >
-          Поставить цель на смену
+          Добавить смену
         </button>
       </div>
 

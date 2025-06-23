@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
@@ -40,6 +41,13 @@ module.exports = {
           'postcss-loader',
         ],
       },
+      {
+        test: /\.(png|jpe?g|gif|svg)$/i,
+        type: 'asset/resource',
+        generator: {
+          filename: 'assets/images/[hash][ext][query]'
+        }
+      },
     ],
   },
   resolve: {
@@ -70,6 +78,10 @@ module.exports = {
     },
   },
   plugins: [
+    new webpack.DefinePlugin({
+      'process.env.NODE_ENV': JSON.stringify('production'),
+      'process.env.PUBLIC_URL': JSON.stringify('.')
+    }),
     new HtmlWebpackPlugin({
       template: './index.html',
       filename: 'index.html',
@@ -93,6 +105,7 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         { from: "manifest.json", to: "" },
+        { from: "public/yandex-auth.html", to: "" },
         { from: "icon-192.png", to: "" },
         { from: "icon-256.png", to: "" },
         { from: "icon-384.png", to: "" },

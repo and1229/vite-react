@@ -19,8 +19,8 @@ const getStartOfYear = (date) => {
 export function useAnalytics(analyticsShifts, goals, calendarData) {
   const allShifts = useMemo(() => {
     const shifts = [
-      ...Object.values(calendarData),
-      ...goals.filter(goal => goal.completed)
+      ...Object.values(calendarData || {}),
+      ...(goals || []).filter(goal => goal && goal.completed)
         .map(goal => ({
           date: goal.planned.date,
           earnings: Number(goal.actual.amount),
@@ -83,10 +83,9 @@ export function useAnalytics(analyticsShifts, goals, calendarData) {
     const startStr = start.toISOString().split('T')[0];
     const nowStr = now.toISOString().split('T')[0];
     
-    const filtered = analyticsShifts.filter(s => {
-      if (!s.date) return false;
-      const shiftDateStr = s.date;
-      return shiftDateStr >= startStr && shiftDateStr <= nowStr;
+    const filtered = (analyticsShifts || []).filter(s => {
+      if (!s || !s.date) return false;
+      return s.date >= startStr && s.date <= nowStr;
     });
 
     const totalEarnings = filtered.reduce((sum, s) => sum + (s.amount || 0), 0);
@@ -103,7 +102,7 @@ export function useAnalytics(analyticsShifts, goals, calendarData) {
   };
 
   const getWeekdayStats = () => {
-    const filtered = analyticsShifts.filter(s => s.date && typeof s.amount === 'number');
+    const filtered = (analyticsShifts || []).filter(s => s && s.date && typeof s.amount === 'number');
     const stats = Array(7).fill(0);
     const counts = Array(7).fill(0);
     filtered.forEach(s => {
@@ -116,23 +115,23 @@ export function useAnalytics(analyticsShifts, goals, calendarData) {
 
   const getWeeklyStats = () => {
     const byWeek = {};
-    analyticsShifts.forEach(s => {
-      if (!s.date) return;
+    (analyticsShifts || []).forEach(s => {
+      if (!s || !s.date) return;
       const d = new Date(s.date);
-      const week = `${d.getFullYear()}-W${Math.ceil((d - new Date(d.getFullYear(),0,1)) / 604800000)}`;
-      if (!byWeek[week]) byWeek[week] = 0;
-      byWeek[week] += s.amount || 0;
+      const weekStart = getStartOfWeek(d).toISOString().split('T')[0];
+      if (!byWeek[weekStart]) byWeek[weekStart] = 0;
+      byWeek[weekStart] += s.amount || 0;
     });
     const sorted = Object.entries(byWeek).sort(([a], [b]) => a.localeCompare(b));
     return {
-      labels: sorted.map(([w]) => w),
+      labels: sorted.map(([w]) => `Неделя ${new Date(w).toLocaleDateString()}`),
       data: sorted.map(([,v]) => v)
     };
   };
 
   const getMonthlyStats = () => {
     const byMonth = {};
-    analyticsShifts.forEach(s => {
+    (analyticsShifts || []).forEach(s => {
       if (!s.date) return;
       const d = new Date(s.date);
       const month = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
@@ -148,12 +147,12 @@ export function useAnalytics(analyticsShifts, goals, calendarData) {
 
   const getPlanFactStats = () => {
     const planByDate = {};
-    goals.forEach(g => {
-      if (g.planned?.date && g.planned?.amount) planByDate[g.planned.date] = g.planned.amount;
+    (goals || []).forEach(g => {
+      if (g && g.planned?.date && g.planned?.amount) planByDate[g.planned.date] = g.planned.amount;
     });
     const factByDate = {};
-    analyticsShifts.forEach(s => {
-      if (s.date && typeof s.amount === 'number') factByDate[s.date] = s.amount;
+    (analyticsShifts || []).forEach(s => {
+      if (s && s.date && typeof s.amount === 'number') factByDate[s.date] = (factByDate[s.date] || 0) + s.amount;
     });
     const allDates = Array.from(new Set([...Object.keys(planByDate), ...Object.keys(factByDate)])).sort();
     return {
@@ -163,6 +162,97 @@ export function useAnalytics(analyticsShifts, goals, calendarData) {
     };
   };
 
+  // Основной источник данных - завершенные смены
+  const completedShifts = useMemo(() => {
+    return (analyticsShifts || [])
+      .filter(shift => shift && shift.date && shift.amount > 0)
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+  }, [analyticsShifts]);
+
+  // Расчет основных метрик
+  const keyMetrics = useMemo(() => {
+    const shiftsCount = completedShifts.length;
+    if (shiftsCount === 0) {
+      return { 
+        totalEarnings: 0, 
+        totalHours: 0, 
+        totalDays: 0,
+        avgPerShift: 0, 
+        avgPerHour: 0, 
+        bestDay: '–',
+        bestDayDate: '–'
+      };
+    }
+
+    const totalEarnings = completedShifts.reduce((sum, s) => sum + s.amount, 0);
+    const totalHours = completedShifts.reduce((sum, s) => sum + (s.hours || 8), 0);
+    const totalDays = new Set(completedShifts.map(s => s.date)).size; // Уникальные дни
+    
+    // Находим самый прибыльный день (конкретную дату)
+    const dayEarnings = {};
+    completedShifts.forEach(s => {
+      if (!dayEarnings[s.date]) dayEarnings[s.date] = 0;
+      dayEarnings[s.date] += s.amount;
+    });
+    
+    const bestDayDate = Object.entries(dayEarnings)
+      .sort(([,a], [,b]) => b - a)[0][0];
+    
+    const bestDay = new Date(bestDayDate).toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long'
+    });
+
+    return {
+      totalEarnings,
+      totalHours,
+      totalDays,
+      avgPerShift: totalEarnings / shiftsCount,
+      avgPerHour: totalHours > 0 ? totalEarnings / totalHours : 0,
+      bestDay,
+      bestDayDate
+    };
+  }, [completedShifts]);
+
+  // Прогноз заработка на разные периоды
+  const forecasts = useMemo(() => {
+    const last30DaysShifts = completedShifts.filter(s => {
+      const date = new Date(s.date);
+      const today = new Date();
+      const diffDays = (today - date) / (1000 * 60 * 60 * 24);
+      return diffDays <= 30;
+    });
+
+    if (last30DaysShifts.length < 3) {
+      return { week: null, month: null, year: null };
+    }
+
+    const avgDailyEarnings = last30DaysShifts.reduce((sum, s) => sum + s.amount, 0) / last30DaysShifts.length;
+    
+    return {
+      week: avgDailyEarnings * 7,
+      month: avgDailyEarnings * 30,
+      year: avgDailyEarnings * 365
+    };
+  }, [completedShifts]);
+
+  // Данные для графика трендов по месяцам
+  const monthlyTrends = useMemo(() => {
+    const byMonth = {};
+    completedShifts.forEach(s => {
+        const d = new Date(s.date);
+        const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (!byMonth[month]) byMonth[month] = { earnings: 0, count: 0 };
+        byMonth[month].earnings += s.amount;
+        byMonth[month].count++;
+    });
+    const sorted = Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b));
+    return {
+        labels: sorted.map(([m]) => m),
+        data: sorted.map(([, v]) => v.earnings)
+    };
+  }, [completedShifts]);
+
   return {
     allShifts,
     calculatePeriodStats,
@@ -170,6 +260,9 @@ export function useAnalytics(analyticsShifts, goals, calendarData) {
     getWeekdayStats,
     getWeeklyStats,
     getMonthlyStats,
-    getPlanFactStats
+    getPlanFactStats,
+    keyMetrics,
+    forecasts,
+    monthlyTrends
   };
 } 

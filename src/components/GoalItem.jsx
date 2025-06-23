@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { SHIFT_TYPES } from '../utils/constants';
 import { formatDate } from '../utils/dateUtils';
+import { useHaptic } from '../hooks/useHaptic';
 
 export function GoalItem({ goal, index, onToggle, onDelete, onUpdate, darkMode }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedGoal, setEditedGoal] = useState(goal);
+  const { hapticButton, hapticWarning, hapticSuccess } = useHaptic();
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -44,6 +46,20 @@ export function GoalItem({ goal, index, onToggle, onDelete, onUpdate, darkMode }
     setIsEditing(false);
     setEditedGoal(goal);
   };
+
+  const handleDelete = () => {
+    onDelete(index);
+    hapticWarning();
+  };
+
+  const handleToggle = () => {
+    onToggle(index);
+    hapticSuccess();
+  };
+
+  if (!goal) {
+    return null;
+  }
 
   if (isEditing) {
     return (
@@ -158,7 +174,7 @@ export function GoalItem({ goal, index, onToggle, onDelete, onUpdate, darkMode }
 
         <div className="flex justify-end gap-2">
           <button
-            onClick={() => onDelete(index)}
+            onClick={handleDelete}
             className="p-2 text-red-400 hover:text-red-300 transition-colors"
             title="Удалить"
           >
@@ -167,7 +183,7 @@ export function GoalItem({ goal, index, onToggle, onDelete, onUpdate, darkMode }
             </svg>
           </button>
           <button
-            onClick={handleEdit}
+            onClick={() => { setIsEditing(true); hapticButton(); }}
             className="p-2 text-blue-400 hover:text-blue-300 transition-colors"
             title="Редактировать"
           >
@@ -176,7 +192,7 @@ export function GoalItem({ goal, index, onToggle, onDelete, onUpdate, darkMode }
             </svg>
           </button>
           <button
-            onClick={() => onToggle(index)}
+            onClick={handleToggle}
             className={`p-2 transition-colors ${
               goal.completed 
                 ? 'text-green-400 hover:text-green-300' 

@@ -8,6 +8,16 @@ export function Header({
   setShowSettings,
   showSettings
 }) {
+  const handleRefresh = () => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then((registration) => {
+        registration.update().then(() => {
+          console.log('Checking for updates...');
+        });
+      });
+    }
+  };
+
   return (
     <header className="w-full p-3 sm:p-4 flex justify-between items-center pwa-header">
       <div className="flex items-center">
@@ -34,6 +44,15 @@ export function Header({
         )}
       </div>
       <div className="flex items-center space-x-2">
+        <button
+          onClick={handleRefresh}
+          className="p-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400 btn-tap"
+          title="Проверить обновления"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M23 4v6h-6M1 20v-6h6M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+          </svg>
+        </button>
         <button
           onClick={() => setShowSettings(!showSettings)}
           className={`p-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400 btn-tap ${
