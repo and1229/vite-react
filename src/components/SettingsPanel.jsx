@@ -7,8 +7,6 @@ export function SettingsPanel({
   toggleDarkMode, 
   showSettings,
   setShowSettings,
-  vkUser,
-  setVkUser,
   onShowFeedback
 }) {
   const [active, setActive] = useState(false);

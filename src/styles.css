@@ -168,6 +168,7 @@ body {
 }
 
 /* Модальные окна */
+<<<<<<< HEAD
 .modal-backdrop {
   background-color: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(4px);
@@ -187,10 +188,19 @@ body {
 }
 
 .modal-enter .modal-content {
+=======
+  .modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.modal-enter {
+>>>>>>> 32030d21223d218632ff6bcc8a10fc9bc9679a2c
   opacity: 0;
   transform: scale(0.9) translateY(-20px);
 }
 
+<<<<<<< HEAD
 .modal-enter-active .modal-content {
   opacity: 1;
   transform: scale(1) translateY(0);
@@ -204,6 +214,12 @@ body {
 .modal-exit-active .modal-content {
   opacity: 0;
   transform: scale(0.95) translateY(10px);
+=======
+.modal-enter-active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+>>>>>>> 32030d21223d218632ff6bcc8a10fc9bc9679a2c
 }
 
 /* Кнопки */
@@ -230,7 +246,10 @@ body {
 
 .micro-button:active {
   transform: scale(0.95);
+<<<<<<< HEAD
   filter: brightness(0.9);
+=======
+>>>>>>> 32030d21223d218632ff6bcc8a10fc9bc9679a2c
 }
 
 /* Карточки с анимацией */
@@ -643,6 +662,7 @@ input:focus, textarea:focus, select:focus {
 .page-transition-exit-active {
   opacity: 0;
   transform: translateX(-20px);
+<<<<<<< HEAD
 }
 
 /* Анимации переключения вкладок */
@@ -900,4 +920,6 @@ input:focus, textarea:focus, select:focus {
 .refresh-btn:hover svg {
   transform: rotate(180deg);
   transition: transform 0.3s ease;
+=======
+>>>>>>> 32030d21223d218632ff6bcc8a10fc9bc9679a2c
 }
