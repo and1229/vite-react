@@ -1,5 +1,6 @@
 import React from 'react';
 import { useHaptic } from '../hooks/useHaptic';
+import { useSubscription } from '../hooks/useSubscription';
 
 // Импорт новых иконок
 import calculatorIcon from '../assets/icons/calculator.png';
@@ -8,8 +9,9 @@ import analyticsIcon from '../assets/icons/analytics.png';
 import goalsIcon from '../assets/icons/goals.png';
 import logoIcon from '../../icon-512.png'; // Импорт логотипа
 
-export function Navigation({ activeTab, setActiveTab, darkMode }) {
+export function Navigation({ activeTab, setActiveTab, darkMode, onShowSubscription }) {
   const { hapticButton } = useHaptic();
+  const { hasAnalyticsAccess, getDaysRemaining } = useSubscription();
   
   const tabs = [
     {
@@ -45,6 +47,30 @@ export function Navigation({ activeTab, setActiveTab, darkMode }) {
         <div className="flex items-center justify-center h-16">
           {/* Навигационные вкладки */}
           <div className="flex items-center space-x-1 sm:space-x-2">
+            {/* Кнопка Pro */}
+            <button
+              onClick={() => {
+                onShowSubscription && onShowSubscription();
+                hapticButton();
+              }}
+              className={`relative flex flex-col items-center justify-center px-2 py-2 rounded-lg transition-all duration-300 ease-in-out min-w-[50px] group ${
+                hasAnalyticsAccess()
+                  ? 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg'
+                  : 'bg-gradient-to-br from-purple-500 to-blue-500 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
+              }`}
+            >
+              {hasAnalyticsAccess() ? (
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-bold">✨</span>
+                  <span className="text-[8px] leading-none">{getDaysRemaining()}д</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-bold">🚀</span>
+                  <span className="text-[8px] leading-none font-medium">Pro</span>
+                </div>
+              )}
+            </button>
             {tabs.map((tab) => (
               <button
                 key={tab.id}

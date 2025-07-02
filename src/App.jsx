@@ -33,6 +33,8 @@ import { useShiftCalculator } from './hooks/useShiftCalculator';
 import { useAnalytics } from './hooks/useAnalytics';
 import { useFirebase } from './hooks/useFirebase';
 import { useMobileGestures } from './hooks/useMobileGestures';
+import { useSubscription } from './hooks/useSubscription';
+import { SubscriptionPage, AnalyticsLockedPlaceholder } from './components/SubscriptionPage';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import './styles.css';
 
@@ -88,6 +90,7 @@ export default function App() {
   const [showTerms, setShowTerms] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showAdButton, setShowAdButton] = useState(false);
+  const [showSubscription, setShowSubscription] = useState(false);
 
   // Состояния калькулятора
   const [targetEarnings, setTargetEarnings] = useState("");
@@ -116,6 +119,9 @@ export default function App() {
 
   // Хук для свайпов
   const swipeRef = useSwipe(handleSwipeLeft, handleSwipeRight);
+
+  // Хук для подписок
+  const { hasAnalyticsAccess, getDaysRemaining } = useSubscription();
 
   // PWA установка - исправленная версия с диагностикой
   useEffect(() => {
@@ -558,6 +564,7 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         darkMode={darkMode}
+        onShowSubscription={() => setShowSubscription(true)}
       />
       
       <main className="container mx-auto p-3 sm:p-4 max-w-4xl w-full transition-all duration-300">
@@ -600,14 +607,21 @@ export default function App() {
           </div>
 
           <div data-tab="analytics">
-            <Analytics
-              darkMode={darkMode}
-              analyticsShifts={analyticsShifts}
-              goals={goals}
-              calendarData={calendarData}
-              selectedPeriod={selectedPeriod}
-              setSelectedPeriod={setSelectedPeriod}
-            />
+            {hasAnalyticsAccess() ? (
+              <Analytics
+                darkMode={darkMode}
+                analyticsShifts={analyticsShifts}
+                goals={goals}
+                calendarData={calendarData}
+                selectedPeriod={selectedPeriod}
+                setSelectedPeriod={setSelectedPeriod}
+              />
+            ) : (
+              <AnalyticsLockedPlaceholder 
+                onUpgradeClick={() => setShowSubscription(true)}
+                darkMode={darkMode}
+              />
+            )}
           </div>
 
           <div data-tab="goals">
@@ -674,6 +688,17 @@ export default function App() {
 
       {showFeedback && (
         <FeedbackModal onClose={() => setShowFeedback(false)} darkMode={darkMode} />
+      )}
+
+      {showSubscription && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <SubscriptionPage 
+              darkMode={darkMode} 
+              onClose={() => setShowSubscription(false)}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
