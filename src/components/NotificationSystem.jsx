@@ -1,142 +1,107 @@
 import React, { useState, useEffect } from 'react';
 
-const NotificationContext = React.createContext();
-
-export function NotificationProvider({ children }) {
+export function NotificationSystem({ darkMode }) {
   const [notifications, setNotifications] = useState([]);
 
-  const addNotification = (message, type = 'info', duration = 5000) => {
-    const id = Date.now() + Math.random();
-    const notification = {
-      id,
-      message,
-      type,
-      duration
-    };
-
+  // Функция добавления уведомления
+  const addNotification = (type, title, message, duration = 5000) => {
+    const id = Date.now();
+    const notification = { id, type, title, message, duration };
+    
     setNotifications(prev => [...prev, notification]);
 
-    // Автоматическое удаление
+    // Автоматически удаляем уведомление
     setTimeout(() => {
       removeNotification(id);
     }, duration);
-
-    return id;
   };
 
+  // Функция удаления уведомления
   const removeNotification = (id) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id));
+    setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
-  const success = (message, duration) => addNotification(message, 'success', duration);
-  const error = (message, duration) => addNotification(message, 'error', duration);
-  const warning = (message, duration) => addNotification(message, 'warning', duration);
-  const info = (message, duration) => addNotification(message, 'info', duration);
+  // Делаем функцию глобально доступной
+  useEffect(() => {
+    window.showNotification = addNotification;
+    
+    // Показываем приветственное уведомление
+    setTimeout(() => {
+      addNotification(
+        'success',
+        'Добро пожаловать! 🎉',
+        'Теперь все функции доступны бесплатно! Полная аналитика, цели и многое другое.',
+        7000
+      );
+    }, 2000);
 
-  return (
-    <NotificationContext.Provider value={{ addNotification, success, error, warning, info, removeNotification }}>
-      {children}
-      <NotificationContainer notifications={notifications} removeNotification={removeNotification} />
-    </NotificationContext.Provider>
-  );
-}
+    return () => {
+      delete window.showNotification;
+    };
+  }, []);
 
-export function useNotifications() {
-  const context = React.useContext(NotificationContext);
-  if (!context) {
-    throw new Error('useNotifications must be used within a NotificationProvider');
-  }
-  return context;
-}
-
-function NotificationContainer({ notifications, removeNotification }) {
   const getNotificationStyles = (type) => {
-    const baseStyles = "fixed top-4 right-4 z-50 max-w-sm w-full p-4 rounded-modern shadow-modern-lg transform transition-all duration-300";
+    const baseStyles = "transform transition-all duration-300 ease-in-out max-w-sm";
     
     switch (type) {
       case 'success':
-        return `${baseStyles} bg-gradient-to-r from-green-400 to-green-600 text-white`;
+        return `${baseStyles} bg-green-500 text-white border-l-4 border-green-600`;
       case 'error':
-        return `${baseStyles} bg-gradient-to-r from-red-400 to-red-600 text-white`;
+        return `${baseStyles} bg-red-500 text-white border-l-4 border-red-600`;
       case 'warning':
-        return `${baseStyles} bg-gradient-to-r from-yellow-400 to-orange-500 text-white`;
+        return `${baseStyles} bg-orange-500 text-white border-l-4 border-orange-600`;
       case 'info':
-        return `${baseStyles} bg-gradient-to-r from-blue-400 to-blue-600 text-white`;
+        return `${baseStyles} bg-blue-500 text-white border-l-4 border-blue-600`;
       default:
-        return `${baseStyles} bg-gradient-to-r from-gray-400 to-gray-600 text-white`;
+        return `${baseStyles} ${darkMode ? 'bg-gray-800 text-white border-l-4 border-purple-500' : 'bg-white text-gray-900 border-l-4 border-purple-500'} shadow-lg`;
     }
   };
 
   const getIcon = (type) => {
     switch (type) {
       case 'success':
-        return (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        );
+        return '✅';
       case 'error':
-        return (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        );
+        return '❌';
       case 'warning':
-        return (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-          </svg>
-        );
+        return '⚠️';
       case 'info':
-        return (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        );
+        return 'ℹ️';
       default:
-        return null;
+        return '📢';
     }
   };
 
+  if (notifications.length === 0) return null;
+
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2">
-      {notifications.map((notification, index) => (
+    <div className="fixed top-20 right-4 z-50 space-y-3">
+      {notifications.map((notification) => (
         <div
           key={notification.id}
-          className={`${getNotificationStyles(notification.type)} animate-slideIn`}
+          className={`${getNotificationStyles(notification.type)} p-4 rounded-lg shadow-xl animate-slide-in-right`}
           style={{
-            transform: `translateX(${index * 10}px)`,
-            zIndex: 1000 - index
+            animation: 'slideInRight 0.3s ease-out'
           }}
         >
           <div className="flex items-start space-x-3">
-            <div className="flex-shrink-0">
+            <span className="text-lg mt-0.5 flex-shrink-0">
               {getIcon(notification.type)}
-            </div>
+            </span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium">
+              <h4 className="font-semibold text-sm mb-1">
+                {notification.title}
+              </h4>
+              <p className="text-sm opacity-90 leading-relaxed">
                 {notification.message}
               </p>
             </div>
             <button
               onClick={() => removeNotification(notification.id)}
-              className="flex-shrink-0 p-1 rounded-full hover:bg-white/20 transition-colors"
+              className="text-white/80 hover:text-white text-lg leading-none flex-shrink-0 transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              ×
             </button>
-          </div>
-          
-          {/* Прогресс-бар */}
-          <div className="mt-2 h-1 bg-white/20 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-white/40 rounded-full transition-all duration-300"
-              style={{
-                width: '100%',
-                animation: `shrink ${notification.duration}ms linear forwards`
-              }}
-            />
           </div>
         </div>
       ))}

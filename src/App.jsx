@@ -19,7 +19,7 @@ import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
 import { Calculator } from './components/Calculator';
 import { Schedule } from './components/Schedule';
-import { Analytics } from './components/Analytics';
+import { EnhancedAnalytics } from './components/EnhancedAnalytics';
 import { Goals } from './components/Goals';
 import { ShiftEditModal } from './components/ShiftEditModal';
 import { SettingsPanel } from './components/SettingsPanel';
@@ -31,12 +31,8 @@ import { useHaptic } from './hooks/useHaptic';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useShiftCalculator } from './hooks/useShiftCalculator';
 import { useAnalytics } from './hooks/useAnalytics';
-import { useFirebase } from './hooks/useFirebase';
 import { useMobileGestures } from './hooks/useMobileGestures';
-import { useSubscription } from './hooks/useSubscription';
-import { SubscriptionPage, AnalyticsLockedPlaceholder } from './components/SubscriptionPage';
-import { AdminNotification } from './components/AdminNotification';
-import { QuickAuth } from './components/QuickAuth';
+import { NotificationSystem } from './components/NotificationSystem';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import './styles.css';
 
@@ -92,7 +88,6 @@ export default function App() {
   const [showTerms, setShowTerms] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showAdButton, setShowAdButton] = useState(false);
-  const [showSubscription, setShowSubscription] = useState(false);
 
   // Состояния калькулятора
   const [targetEarnings, setTargetEarnings] = useState("");
@@ -103,6 +98,10 @@ export default function App() {
   const [shiftType, setShiftType] = useState('day');
   const [shiftStatus, setShiftStatus] = useState('regular');
   const [shiftNote, setShiftNote] = useState('');
+
+  // Улучшенное управление обновлениями
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [updateChecking, setUpdateChecking] = useState(false);
 
   // Свайпы для навигации
   const handleSwipeLeft = () => {
@@ -122,13 +121,7 @@ export default function App() {
   // Хук для свайпов
   const swipeRef = useSwipe(handleSwipeLeft, handleSwipeRight);
 
-  // Firebase хук
-  const firebaseHook = useFirebase();
-  
-  // Хук для подписок
-  const { hasAnalyticsAccess, getDaysRemaining } = useSubscription(firebaseHook);
-
-  // PWA установка - исправленная версия с диагностикой
+  // PWA установка - улучшенная версия
   useEffect(() => {
     let deferredPrompt = null;
 
@@ -142,21 +135,18 @@ export default function App() {
 
     // Проверяем, установлено ли уже приложение
     const checkIfInstalled = () => {
-      // Проверка для standalone режима
       if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
         console.log('App is already installed in standalone mode');
         setShowInstall(false);
         return true;
       }
       
-      // Проверка для iOS (проверяем наличие вкладки в браузере)
       if (window.navigator.standalone === true) {
         console.log('App is already installed on iOS');
         setShowInstall(false);
         return true;
       }
       
-      // Проверка для Android (проверяем наличие в списке приложений)
       if ('getInstalledRelatedApps' in navigator) {
         navigator.getInstalledRelatedApps().then((relatedApps) => {
           if (relatedApps.length > 0) {
@@ -170,47 +160,7 @@ export default function App() {
       return false;
     };
 
-    // Диагностика PWA
-    const diagnosePWA = async () => {
-      console.log('=== PWA Диагностика ===');
-      console.log('HTTPS:', window.location.protocol === 'https:');
-      console.log('Service Worker:', 'serviceWorker' in navigator);
-      console.log('Push Manager:', 'PushManager' in window);
-      console.log('User Agent:', navigator.userAgent);
-      
-      // Проверяем manifest
-      try {
-        const manifestResponse = await fetch('/manifest.json');
-        if (manifestResponse.ok) {
-          const manifest = await manifestResponse.json();
-          console.log('Manifest загружен:', manifest.name);
-        } else {
-          console.error('Manifest не загружен:', manifestResponse.status);
-        }
-      } catch (error) {
-        console.error('Ошибка загрузки manifest:', error);
-      }
-      
-      // Проверяем service worker
-      if ('serviceWorker' in navigator) {
-        try {
-          const registration = await navigator.serviceWorker.getRegistration();
-          if (registration) {
-            console.log('Service Worker зарегистрирован:', registration.active ? 'активен' : 'неактивен');
-          } else {
-            console.log('Service Worker не зарегистрирован');
-          }
-        } catch (error) {
-          console.error('Ошибка проверки Service Worker:', error);
-        }
-      }
-      
-      console.log('=== Конец диагностики ===');
-    };
-
-    // Проверяем при загрузке
     checkIfInstalled();
-    diagnosePWA();
 
     window.addEventListener('beforeinstallprompt', handler);
     window.addEventListener('appinstalled', () => {
@@ -221,7 +171,6 @@ export default function App() {
     });
 
     // Принудительно показываем кнопку для тестирования через 1 секунду
-    // (удалить после тестирования)
     const testTimer = setTimeout(() => {
       if (!deferredPrompt && !checkIfInstalled()) {
         console.log('Принудительно показываем кнопку для тестирования');
@@ -257,7 +206,6 @@ export default function App() {
       // Fallback для случаев, когда нет deferredPrompt
       console.log('No deferred prompt available, showing manual install instructions');
       
-      // Показываем инструкции для ручной установки
       if (navigator.userAgent.includes('Chrome')) {
         alert('Для установки приложения:\n1. Нажмите на меню браузера (⋮)\n2. Выберите "Установить приложение"\n3. Подтвердите установку');
       } else if (navigator.userAgent.includes('Safari')) {
@@ -282,14 +230,6 @@ export default function App() {
 
     return () => clearTimeout(adTimer);
   }, []);
-
-  // Обновление статистики пользователей
-  useEffect(() => {
-    // Эта логика больше не нужна, так как `usersCount` берется из localStorage,
-    // а авторизация теперь через Яндекс.
-    // let users = JSON.parse(localStorage.getItem('wb_users') || '[]');
-    // setUsersCount(users.length);
-  }, [setUsersCount]);
 
   // Яндекс.Метрика
   useEffect(() => {
@@ -473,9 +413,14 @@ export default function App() {
     return acc;
   }, {});
 
+  // Улучшенная система обновлений
   useEffect(() => {
-    // Добавляем глобальную функцию для тестирования обновлений
+    let updateCheckInterval;
+    let updateCheckTimeout;
+
+    // Функция принудительного обновления
     window.forceUpdate = () => {
+      setUpdateChecking(true);
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then((registration) => {
           registration.unregister().then(() => {
@@ -486,59 +431,84 @@ export default function App() {
                     return caches.delete(cacheName);
                   })
                 );
+              }).then(() => {
+                setUpdateChecking(false);
+                window.location.reload();
               });
-            }
-            window.location.reload();
-          });
-        });
-      }
-    };
-
-    serviceWorkerRegistration.register({
-      onUpdate: registration => {
-        console.log('New version detected! Auto-updating...');
-        
-        // Автоматически обновляем приложение
-        if (registration.waiting) {
-          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-          registration.waiting.addEventListener('statechange', event => {
-            if (event.target.state === 'activated') {
-              console.log('New version activated, reloading...');
+            } else {
+              setUpdateChecking(false);
               window.location.reload();
             }
           });
+        });
+      } else {
+        setUpdateChecking(false);
+        window.location.reload();
+      }
+    };
+
+    // Функция проверки обновлений
+    const checkForUpdates = async () => {
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          await registration.update();
+        } catch (error) {
+          console.log('Update check failed:', error);
         }
+      }
+    };
+
+    // Регистрация service worker с улучшенным управлением обновлениями
+    serviceWorkerRegistration.register({
+      onUpdate: registration => {
+        console.log('New version detected! Preparing auto-update...');
+        setUpdateAvailable(true);
+        
+        // Автоматически обновляем через 3 секунды, если пользователь не взаимодействует
+        updateCheckTimeout = setTimeout(() => {
+          if (registration.waiting) {
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            registration.waiting.addEventListener('statechange', event => {
+              if (event.target.state === 'activated') {
+                console.log('New version activated, reloading...');
+                window.location.reload();
+              }
+            });
+          }
+        }, 3000);
       },
       onSuccess: registration => {
         console.log('Service worker registered successfully');
       }
     });
 
-    // Дополнительная проверка обновлений каждые 15 минут
-    const checkForUpdates = () => {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then((registration) => {
-          registration.update();
-        });
-      }
-    };
-
-    const updateInterval = setInterval(checkForUpdates, 15 * 60 * 1000); // 15 минут
+    // Проверка обновлений каждые 10 минут (более частая проверка)
+    updateCheckInterval = setInterval(checkForUpdates, 10 * 60 * 1000);
 
     // Проверка обновлений при фокусе на приложении
     const handleFocus = () => {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then((registration) => {
-          registration.update();
-        });
+      checkForUpdates();
+    };
+
+    // Проверка обновлений при возврате из фонового режима
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        checkForUpdates();
       }
     };
 
     window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Начальная проверка обновлений
+    checkForUpdates();
 
     return () => {
-      clearInterval(updateInterval);
+      clearInterval(updateCheckInterval);
+      clearTimeout(updateCheckTimeout);
       window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       delete window.forceUpdate;
     };
   }, []);
@@ -555,6 +525,9 @@ export default function App() {
         handleInstallClick={handleInstallClick}
         showSettings={showSettings}
         setShowSettings={setShowSettings}
+        updateAvailable={updateAvailable}
+        updateChecking={updateChecking}
+        onForceUpdate={() => window.forceUpdate && window.forceUpdate()}
       />
       
       <SettingsPanel
@@ -569,8 +542,6 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         darkMode={darkMode}
-        onShowSubscription={() => setShowSubscription(true)}
-        firebaseHook={firebaseHook}
       />
       
       <main className="container mx-auto p-3 sm:p-4 max-w-4xl w-full transition-all duration-300">
@@ -613,21 +584,14 @@ export default function App() {
           </div>
 
           <div data-tab="analytics">
-            {hasAnalyticsAccess() ? (
-              <Analytics
-                darkMode={darkMode}
-                analyticsShifts={analyticsShifts}
-                goals={goals}
-                calendarData={calendarData}
-                selectedPeriod={selectedPeriod}
-                setSelectedPeriod={setSelectedPeriod}
-              />
-            ) : (
-              <AnalyticsLockedPlaceholder 
-                onUpgradeClick={() => setShowSubscription(true)}
-                darkMode={darkMode}
-              />
-            )}
+            <EnhancedAnalytics
+              darkMode={darkMode}
+              analyticsShifts={analyticsShifts}
+              goals={goals}
+              calendarData={calendarData}
+              selectedPeriod={selectedPeriod}
+              setSelectedPeriod={setSelectedPeriod}
+            />
           </div>
 
           <div data-tab="goals">
@@ -654,7 +618,7 @@ export default function App() {
           href="https://pxl.leads.su/click/e2a6684949541fd83e9e15e94a82fee9?erid=2W5zFJLdzVv"
           target="_blank"
           rel="noopener noreferrer"
-          className={`ad-button px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-purple-500 via-blue-500 to-purple-600 ad-button-gradient text-white font-semibold text-sm sm:text-base shadow-lg ${darkMode ? 'shadow-purple-500/25' : 'shadow-purple-500/20'} ${showAdButton ? 'ad-button-enter-active' : 'ad-button-enter'}`}
+          className={`ad-button px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-purple-500 via-blue-500 to-purple-600 ad-button-gradient text-white font-semibold text-sm sm:text-base shadow-lg ${darkMode ? 'shadow-purple-500/25' : 'shadow-purple-500/20'} ${showAdButton ? 'ad-button-enter-active' : 'ad-button-enter'} hover:scale-105 transition-all duration-300`}
           style={{
             minWidth: 160,
             textAlign: 'center',
@@ -696,22 +660,31 @@ export default function App() {
         <FeedbackModal onClose={() => setShowFeedback(false)} darkMode={darkMode} />
       )}
 
-      {showSubscription && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto">
-            <SubscriptionPage 
-              darkMode={darkMode} 
-              onClose={() => setShowSubscription(false)}
-            />
-          </div>
+      {/* Система уведомлений */}
+      <NotificationSystem darkMode={darkMode} />
+      
+      {/* Уведомление об обновлении */}
+      {updateAvailable && (
+        <div className="fixed top-4 right-4 z-50 bg-blue-500 text-white p-4 rounded-lg shadow-lg animate-bounce">
+          <p className="text-sm font-medium">Доступно обновление!</p>
+          <button 
+            onClick={() => window.forceUpdate && window.forceUpdate()}
+            className="mt-2 px-3 py-1 bg-white text-blue-500 rounded text-xs font-semibold hover:bg-gray-100 transition-colors"
+          >
+            Обновить сейчас
+          </button>
         </div>
       )}
 
-      {/* Уведомление для администратора */}
-      <AdminNotification firebaseHook={firebaseHook} darkMode={darkMode} />
-      
-      {/* Быстрая авторизация */}
-      <QuickAuth firebaseHook={firebaseHook} darkMode={darkMode} />
+      {/* Индикатор проверки обновлений */}
+      {updateChecking && (
+        <div className="fixed top-4 left-4 z-50 bg-purple-500 text-white p-3 rounded-lg shadow-lg">
+          <div className="flex items-center space-x-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            <span className="text-sm">Обновление...</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
