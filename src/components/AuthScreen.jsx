@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function AuthScreen({ onGoogleSignIn, onGuestSignIn, loadingSync, syncError }) {
+export function AuthScreen({ onGoogleSignIn, onGuestSignIn, onDemoSignIn, loadingSync, syncError }) {
   return (
     <div className="fixed inset-0 z-50 min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
       <div className="text-center max-w-md mx-auto px-6">
@@ -54,6 +54,18 @@ export function AuthScreen({ onGoogleSignIn, onGuestSignIn, loadingSync, syncErr
           >
             Продолжить как гость
           </button>
+          
+          {/* Демо режим для администратора */}
+          <button
+            onClick={onDemoSignIn}
+            disabled={loadingSync}
+            className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-yellow-600 to-orange-600 text-white font-semibold shadow-lg hover:from-yellow-700 hover:to-orange-700 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="flex items-center justify-center">
+              <span className="mr-2">👑</span>
+              Демо режим (Полный доступ)
+            </div>
+          </button>
         </div>
         
         {syncError && (
@@ -97,7 +109,8 @@ export function AuthScreen({ onGoogleSignIn, onGuestSignIn, loadingSync, syncErr
         <div className="mt-8 text-xs text-gray-400 space-y-1">
           <p>🚀 <strong>Google вход:</strong> Синхронизация данных между устройствами</p>
           <p>👤 <strong>Гостевой режим:</strong> Локальное хранение данных</p>
-          <p className="text-gray-500 mt-2">Приложение полностью функционально в обоих режимах</p>
+          <p>👑 <strong>Демо режим:</strong> Полный доступ к Premium функциям</p>
+          <p className="text-gray-500 mt-2">Приложение полностью функционально во всех режимах</p>
         </div>
       </div>
     </div>

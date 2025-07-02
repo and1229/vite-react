@@ -36,6 +36,7 @@ import { useMobileGestures } from './hooks/useMobileGestures';
 import { useSubscription } from './hooks/useSubscription';
 import { SubscriptionPage, AnalyticsLockedPlaceholder } from './components/SubscriptionPage';
 import { AdminNotification } from './components/AdminNotification';
+import { QuickAuth } from './components/QuickAuth';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import './styles.css';
 
@@ -708,6 +709,9 @@ export default function App() {
 
       {/* Уведомление для администратора */}
       <AdminNotification firebaseHook={firebaseHook} darkMode={darkMode} />
+      
+      {/* Быстрая авторизация */}
+      <QuickAuth firebaseHook={firebaseHook} darkMode={darkMode} />
     </div>
   );
 }

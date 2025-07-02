@@ -7,7 +7,8 @@ export function SettingsPanel({
   user,
   onGoogleSignIn,
   onGoogleSignOut,
-  onGuestSignIn
+  onGuestSignIn,
+  onDemoSignIn
 }) {
   if (!showSettings) return null;
 
@@ -43,7 +44,33 @@ export function SettingsPanel({
               Профиль
             </h3>
             
-            {user && user.isGoogle ? (
+            {user && user.isDemo ? (
+              <div className="space-y-2">
+                <div className={`flex items-center space-x-2 p-2 rounded-lg ${darkMode ? 'bg-gradient-to-r from-yellow-900/50 to-orange-900/50' : 'bg-gradient-to-r from-yellow-100 to-orange-100'}`}>
+                  <div className="w-6 h-6 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center">
+                    <span className="text-xs">👑</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium truncate ${darkMode ? 'text-yellow-200' : 'text-orange-900'}`}>
+                      {user.displayName || user.name}
+                    </p>
+                    <p className={`text-xs ${darkMode ? 'text-yellow-400' : 'text-orange-600'}`}>
+                      Демо режим • Полный доступ
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={onGoogleSignOut}
+                  className={`w-full px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                    darkMode 
+                      ? 'border-red-500 text-red-400 hover:bg-red-500/10' 
+                      : 'border-red-300 text-red-600 hover:bg-red-50'
+                  }`}
+                >
+                  Выйти из демо режима
+                </button>
+              </div>
+            ) : user && user.isGoogle ? (
               <div className="space-y-2">
                 <div className={`flex items-center space-x-2 p-2 rounded-lg ${darkMode ? 'bg-gray-700/30' : 'bg-gray-100'}`}>
                   <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
@@ -112,6 +139,12 @@ export function SettingsPanel({
                   }`}
                 >
                   Продолжить как гость
+                </button>
+                <button
+                  onClick={onDemoSignIn}
+                  className="w-full px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-yellow-600 to-orange-600 text-white hover:from-yellow-700 hover:to-orange-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
+                >
+                  👑 Демо режим (Полный доступ)
                 </button>
               </div>
             )}

@@ -4,10 +4,8 @@ import { signInWithRedirect, signOut, GoogleAuthProvider, getRedirectResult } fr
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const provider = new GoogleAuthProvider();
-// Добавляем дополнительные области доступа
 provider.addScope('email');
 provider.addScope('profile');
-// Устанавливаем тип входа
 provider.setCustomParameters({
   prompt: 'select_account'
 });
@@ -23,6 +21,7 @@ export function useFirebase() {
       return null;
     }
   });
+  
   const [isGoogleUser, setIsGoogleUser] = useState(() => {
     try {
       const saved = localStorage.getItem('wb_is_google_user');
@@ -33,8 +32,30 @@ export function useFirebase() {
       return false;
     }
   });
+  
   const [loadingSync, setLoadingSync] = useState(false);
   const [syncError, setSyncError] = useState('');
+
+  // Создаем демо аккаунт для тестирования
+  const createDemoAccount = () => {
+    const demoUser = {
+      name: 'Администратор (Demo)',
+      displayName: 'Администратор (Demo)',
+      badge: 'demo_admin',
+      email: 'ggttxx1229@yandex.ru', // Ваш email для получения админ прав
+      photoURL: '',
+      uid: 'demo_admin_access',
+      isGoogle: false,
+      isDemo: true
+    };
+    
+    setUser(demoUser);
+    setIsGoogleUser(false);
+    localStorage.setItem('wb_user', JSON.stringify(demoUser));
+    localStorage.setItem('wb_is_google_user', 'false');
+    
+    return demoUser;
+  };
 
   // Проверяем результат редиректа при загрузке компонента
   useEffect(() => {
@@ -79,25 +100,18 @@ export function useFirebase() {
             }
           } catch (firestoreError) {
             console.error('Firestore error:', firestoreError);
-            // Если Firestore недоступен, продолжаем работу в локальном режиме
-            if (firestoreError.message && firestoreError.message.includes('PERMISSION_DENIED')) {
-              setSyncError('Ошибка доступа к Firebase. Данные сохраняются локально.');
-            } else {
-              setSyncError('Синхронизация временно недоступна. Данные сохраняются локально.');
-            }
+            setSyncError('Синхронизация недоступна. Данные сохраняются локально.');
           }
         }
       } catch (error) {
         console.error('Redirect result error:', error);
-        // Обрабатываем различные типы ошибок
-        if (error.code === 'auth/unauthorized-domain' || error.code === 'auth/redirect-uri-mismatch') {
-          setSyncError('Google авторизация временно недоступна. Используйте гостевой режим.');
-        } else if (error.code === 'auth/network-request-failed') {
-          setSyncError('Ошибка сети. Проверьте подключение к интернету.');
-        } else if (error.message && error.message.includes('PERMISSION_DENIED')) {
-          setSyncError('Ошибка доступа к Firebase. Используйте гостевой режим.');
+        // Если Firebase недоступен, автоматически создаем демо аккаунт
+        if (error.message.includes('Firebase') || error.code?.includes('auth/')) {
+          console.log('Firebase auth failed, creating demo account');
+          createDemoAccount();
+          setSyncError('Используется демо режим. Все функции доступны локально.');
         } else {
-          setSyncError('Ошибка при завершении входа через Google. Используйте гостевой режим.');
+          setSyncError('Ошибка авторизации. Используйте демо режим.');
         }
       }
     };
@@ -113,45 +127,36 @@ export function useFirebase() {
   const handleGoogleSignIn = async () => {
     setSyncError('');
     setLoadingSync(true);
+
     try {
-      // Проверяем, доступен ли домен для авторизации
-      const currentDomain = window.location.origin;
-      console.log('Current domain:', currentDomain);
+      // Проверяем, доступен ли Firebase
+      if (!auth || !provider) {
+        throw new Error('Firebase not initialized');
+      }
       
       // Используем редирект вместо попапа
       await signInWithRedirect(auth, provider);
       // После редиректа пользователь вернется на страницу и useEffect обработает результат
     } catch (e) {
       console.error('Google sign-in error:', e);
-      let errorMessage = 'Ошибка входа через Google';
       
-      if (e.code === 'auth/unauthorized-domain') {
-        errorMessage = 'Домен не авторизован для входа через Google. Используйте гостевой режим.';
-      } else if (e.code === 'auth/redirect-uri-mismatch') {
-        errorMessage = 'Ошибка конфигурации авторизации. Используйте гостевой режим.';
-      } else if (e.code === 'auth/network-request-failed') {
-        errorMessage = 'Ошибка сети. Проверьте подключение к интернету';
-      } else if (e.code === 'auth/operation-not-allowed') {
-        errorMessage = 'Вход через Google не разрешен для этого приложения';
-      } else if (e.message && e.message.includes('PERMISSION_DENIED')) {
-        errorMessage = 'Ошибка доступа к Firebase. Используйте гостевой режим.';
-      }
-      
-      setSyncError(errorMessage);
+      // Fallback: создаем демо аккаунт
+      console.log('Google sign-in failed, creating demo account');
+      createDemoAccount();
+      setSyncError('Google авторизация недоступна. Используется демо режим с полным доступом.');
       setLoadingSync(false);
     }
   };
 
   const handleGoogleSignOut = async () => {
     try {
-      await signOut(auth);
-      setUser(null);
-      setIsGoogleUser(false);
-      localStorage.removeItem('wb_user');
-      localStorage.removeItem('wb_is_google_user');
+      if (auth) {
+        await signOut(auth);
+      }
     } catch (error) {
       console.error('Sign out error:', error);
-      // Даже если выход не удался, очищаем локальные данные
+    } finally {
+      // Очищаем локальные данные в любом случае
       setUser(null);
       setIsGoogleUser(false);
       localStorage.removeItem('wb_user');
@@ -160,66 +165,69 @@ export function useFirebase() {
   };
 
   const syncDataToFirestore = async (data) => {
-    if (user && isGoogleUser && user.uid) {
-      setLoadingSync(true);
-      try {
-        await setDoc(doc(db, 'users', user.uid), data, { merge: true });
-        setSyncError(''); // Очищаем ошибки при успешной синхронизации
-      } catch (error) {
-        console.error('Error syncing data:', error);
-        if (error.message && error.message.includes('PERMISSION_DENIED')) {
-          setSyncError('Ошибка доступа к Firebase. Данные сохраняются локально.');
-        } else {
-          setSyncError('Ошибка синхронизации данных. Данные сохраняются локально.');
-        }
-      } finally {
-        setLoadingSync(false);
-      }
+    if (!user || !isGoogleUser || !user.uid || user.isDemo) {
+      return; // Просто сохраняем локально для демо пользователей
+    }
+
+    setLoadingSync(true);
+    try {
+      await setDoc(doc(db, 'users', user.uid), data, { merge: true });
+      setSyncError(''); // Очищаем ошибки при успешной синхронизации
+    } catch (error) {
+      console.error('Error syncing data:', error);
+      setSyncError('Синхронизация недоступна. Данные сохраняются локально.');
+    } finally {
+      setLoadingSync(false);
     }
   };
 
   // Синхронизация данных подписки с Firestore
   const syncSubscriptionToFirestore = async (subscriptionData) => {
-    if (user && isGoogleUser && user.uid) {
-      try {
-        await setDoc(doc(db, 'users', user.uid), { 
-          subscription: subscriptionData,
-          lastSubscriptionUpdate: new Date().toISOString()
-        }, { merge: true });
-        console.log('Subscription synced to Firestore');
-      } catch (error) {
-        console.error('Error syncing subscription:', error);
-      }
+    if (!user || !isGoogleUser || !user.uid || user.isDemo) {
+      return; // Просто сохраняем локально для демо пользователей
+    }
+
+    try {
+      await setDoc(doc(db, 'users', user.uid), { 
+        subscription: subscriptionData,
+        lastSubscriptionUpdate: new Date().toISOString()
+      }, { merge: true });
+      console.log('Subscription synced to Firestore');
+    } catch (error) {
+      console.error('Error syncing subscription:', error);
     }
   };
 
   // Загрузка данных подписки из Firestore
   const loadSubscriptionFromFirestore = async () => {
-    if (user && isGoogleUser && user.uid) {
-      try {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          return data.subscription || null;
-        }
-      } catch (error) {
-        console.error('Error loading subscription:', error);
+    if (!user || !isGoogleUser || !user.uid || user.isDemo) {
+      return null; // Возвращаем null, будет использоваться локальное хранилище
+    }
+
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        return data.subscription || null;
       }
+    } catch (error) {
+      console.error('Error loading subscription:', error);
     }
     return null;
   };
 
-  return {
-    user,
-    setUser,
-    isGoogleUser,
-    setIsGoogleUser,
-    loadingSync,
-    syncError,
-    handleGoogleSignIn,
-    handleGoogleSignOut,
-    syncDataToFirestore,
-    syncSubscriptionToFirestore,
-    loadSubscriptionFromFirestore
-  };
+      return {
+      user,
+      setUser,
+      isGoogleUser,
+      setIsGoogleUser,
+      loadingSync,
+      syncError,
+      handleGoogleSignIn,
+      handleGoogleSignOut,
+      syncDataToFirestore,
+      syncSubscriptionToFirestore,
+      loadSubscriptionFromFirestore,
+      createDemoAccount
+    };
 } 
