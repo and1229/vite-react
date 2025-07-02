@@ -54,7 +54,7 @@ export const PAYMENT_PROVIDERS = {
   }
 };
 
-export function useSubscription() {
+export function useSubscription(firebaseHook = null) {
   const [subscriptionStatus, setSubscriptionStatus] = useState(() => {
     try {
       const saved = localStorage.getItem('app_subscription');
@@ -80,10 +80,38 @@ export function useSubscription() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState('');
 
+  // Список администраторов с бессрочным доступом
+  const ADMIN_EMAILS = [
+    'ggttxx1229@yandex.ru' // Ваш аккаунт
+  ];
+
   // Проверяем статус подписки при загрузке
   useEffect(() => {
     checkSubscriptionStatus();
+    loadSubscriptionFromFirebase();
   }, []);
+
+  // Загрузка подписки из Firebase при входе
+  const loadSubscriptionFromFirebase = async () => {
+    if (firebaseHook && firebaseHook.loadSubscriptionFromFirestore) {
+      try {
+        const cloudSubscription = await firebaseHook.loadSubscriptionFromFirestore();
+        if (cloudSubscription) {
+          // Проверяем, актуальнее ли облачная версия
+          const localLastUpdate = localStorage.getItem('app_subscription_last_update');
+          const cloudLastUpdate = cloudSubscription.lastUpdate;
+          
+          if (!localLastUpdate || (cloudLastUpdate && new Date(cloudLastUpdate) > new Date(localLastUpdate))) {
+            setSubscriptionStatus(cloudSubscription);
+            localStorage.setItem('app_subscription', JSON.stringify(cloudSubscription));
+            localStorage.setItem('app_subscription_last_update', cloudLastUpdate || new Date().toISOString());
+          }
+        }
+      } catch (error) {
+        console.error('Error loading subscription from Firebase:', error);
+      }
+    }
+  };
 
   // Автоматическая проверка статуса каждые 5 минут
   useEffect(() => {
@@ -122,6 +150,14 @@ export function useSubscription() {
 
   // Проверка доступа к аналитике
   const hasAnalyticsAccess = () => {
+    // Проверяем администраторский доступ через Firebase
+    if (firebaseHook && firebaseHook.user && firebaseHook.user.email) {
+      if (ADMIN_EMAILS.includes(firebaseHook.user.email)) {
+        return true; // Администраторы имеют бессрочный доступ
+      }
+    }
+
+    // Обычная проверка подписки
     return subscriptionStatus.isActive && subscriptionStatus.expiresAt && 
            new Date() < new Date(subscriptionStatus.expiresAt);
   };
@@ -141,7 +177,7 @@ export function useSubscription() {
   // Создание платежа через ЮMoney
   const createYooMoneyPayment = (plan) => {
     const paymentData = {
-      receiver: '4100117867298442', // Номер кошелька ЮMoney (замените на ваш)
+      receiver: '4100110620934619', // Ваш номер кошелька ЮMoney
       'quickpay-form': 'donate',
       'payment-type-choice': 'on',
       'mobile-payment-type-choice': 'on',
@@ -293,12 +329,19 @@ export function useSubscription() {
       plan: plan,
       expiresAt: expiresAt.toISOString(),
       purchasedAt: now.toISOString(),
-      transactionId: transactionId || `manual_${Date.now()}`
+      transactionId: transactionId || `manual_${Date.now()}`,
+      lastUpdate: now.toISOString()
     };
 
     setSubscriptionStatus(newStatus);
     localStorage.setItem('app_subscription', JSON.stringify(newStatus));
+    localStorage.setItem('app_subscription_last_update', newStatus.lastUpdate);
     localStorage.removeItem('app_pending_payment');
+
+    // Синхронизируем с Firebase
+    if (firebaseHook && firebaseHook.syncSubscriptionToFirestore) {
+      firebaseHook.syncSubscriptionToFirestore(newStatus);
+    }
 
     // Показываем уведомление об активации
     if (window.Notification && Notification.permission === 'granted') {

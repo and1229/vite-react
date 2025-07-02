@@ -178,6 +178,37 @@ export function useFirebase() {
     }
   };
 
+  // Синхронизация данных подписки с Firestore
+  const syncSubscriptionToFirestore = async (subscriptionData) => {
+    if (user && isGoogleUser && user.uid) {
+      try {
+        await setDoc(doc(db, 'users', user.uid), { 
+          subscription: subscriptionData,
+          lastSubscriptionUpdate: new Date().toISOString()
+        }, { merge: true });
+        console.log('Subscription synced to Firestore');
+      } catch (error) {
+        console.error('Error syncing subscription:', error);
+      }
+    }
+  };
+
+  // Загрузка данных подписки из Firestore
+  const loadSubscriptionFromFirestore = async () => {
+    if (user && isGoogleUser && user.uid) {
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          return data.subscription || null;
+        }
+      } catch (error) {
+        console.error('Error loading subscription:', error);
+      }
+    }
+    return null;
+  };
+
   return {
     user,
     setUser,
@@ -187,6 +218,8 @@ export function useFirebase() {
     syncError,
     handleGoogleSignIn,
     handleGoogleSignOut,
-    syncDataToFirestore
+    syncDataToFirestore,
+    syncSubscriptionToFirestore,
+    loadSubscriptionFromFirestore
   };
 } 

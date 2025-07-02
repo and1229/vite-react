@@ -1,6 +1,7 @@
 import React from 'react';
 import { useHaptic } from '../hooks/useHaptic';
 import { useSubscription } from '../hooks/useSubscription';
+import { AdminBadge } from './AdminBadge';
 
 // Импорт новых иконок
 import calculatorIcon from '../assets/icons/calculator.png';
@@ -9,9 +10,13 @@ import analyticsIcon from '../assets/icons/analytics.png';
 import goalsIcon from '../assets/icons/goals.png';
 import logoIcon from '../../icon-512.png'; // Импорт логотипа
 
-export function Navigation({ activeTab, setActiveTab, darkMode, onShowSubscription }) {
+export function Navigation({ activeTab, setActiveTab, darkMode, onShowSubscription, firebaseHook }) {
   const { hapticButton } = useHaptic();
-  const { hasAnalyticsAccess, getDaysRemaining } = useSubscription();
+  const { hasAnalyticsAccess, getDaysRemaining } = useSubscription(firebaseHook);
+  
+  // Проверяем админ статус
+  const ADMIN_EMAILS = ['ggttxx1229@yandex.ru'];
+  const isAdmin = firebaseHook?.user?.email && ADMIN_EMAILS.includes(firebaseHook.user.email);
   
   const tabs = [
     {
@@ -53,24 +58,31 @@ export function Navigation({ activeTab, setActiveTab, darkMode, onShowSubscripti
                 onShowSubscription && onShowSubscription();
                 hapticButton();
               }}
-              className={`relative flex flex-col items-center justify-center px-2 py-2 rounded-lg transition-all duration-300 ease-in-out min-w-[50px] group ${
-                hasAnalyticsAccess()
-                  ? 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg'
-                  : 'bg-gradient-to-br from-purple-500 to-blue-500 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
-              }`}
-            >
-              {hasAnalyticsAccess() ? (
-                <div className="flex flex-col items-center">
-                  <span className="text-xs font-bold">✨</span>
-                  <span className="text-[8px] leading-none">{getDaysRemaining()}д</span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center">
-                  <span className="text-xs font-bold">🚀</span>
-                  <span className="text-[8px] leading-none font-medium">Pro</span>
-                </div>
-              )}
-            </button>
+                             className={`relative flex flex-col items-center justify-center px-2 py-2 rounded-lg transition-all duration-300 ease-in-out min-w-[50px] group ${
+                 isAdmin
+                   ? 'bg-gradient-to-br from-yellow-400 to-orange-400 text-gray-900 shadow-lg'
+                   : hasAnalyticsAccess()
+                   ? 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg'
+                   : 'bg-gradient-to-br from-purple-500 to-blue-500 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
+               }`}
+             >
+               {isAdmin ? (
+                 <div className="flex flex-col items-center">
+                   <span className="text-xs font-bold">👑</span>
+                   <span className="text-[8px] leading-none font-medium">Admin</span>
+                 </div>
+               ) : hasAnalyticsAccess() ? (
+                 <div className="flex flex-col items-center">
+                   <span className="text-xs font-bold">✨</span>
+                   <span className="text-[8px] leading-none">{getDaysRemaining()}д</span>
+                 </div>
+               ) : (
+                 <div className="flex flex-col items-center">
+                   <span className="text-xs font-bold">🚀</span>
+                   <span className="text-[8px] leading-none font-medium">Pro</span>
+                 </div>
+               )}
+             </button>
             {tabs.map((tab) => (
               <button
                 key={tab.id}

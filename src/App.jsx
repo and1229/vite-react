@@ -35,6 +35,7 @@ import { useFirebase } from './hooks/useFirebase';
 import { useMobileGestures } from './hooks/useMobileGestures';
 import { useSubscription } from './hooks/useSubscription';
 import { SubscriptionPage, AnalyticsLockedPlaceholder } from './components/SubscriptionPage';
+import { AdminNotification } from './components/AdminNotification';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import './styles.css';
 
@@ -120,8 +121,11 @@ export default function App() {
   // Хук для свайпов
   const swipeRef = useSwipe(handleSwipeLeft, handleSwipeRight);
 
+  // Firebase хук
+  const firebaseHook = useFirebase();
+  
   // Хук для подписок
-  const { hasAnalyticsAccess, getDaysRemaining } = useSubscription();
+  const { hasAnalyticsAccess, getDaysRemaining } = useSubscription(firebaseHook);
 
   // PWA установка - исправленная версия с диагностикой
   useEffect(() => {
@@ -565,6 +569,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         darkMode={darkMode}
         onShowSubscription={() => setShowSubscription(true)}
+        firebaseHook={firebaseHook}
       />
       
       <main className="container mx-auto p-3 sm:p-4 max-w-4xl w-full transition-all duration-300">
@@ -700,6 +705,9 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Уведомление для администратора */}
+      <AdminNotification firebaseHook={firebaseHook} darkMode={darkMode} />
     </div>
   );
 }
